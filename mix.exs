@@ -14,7 +14,7 @@ defmodule Kaffe.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger]]
+    [applications: [:logger, :brod]]
   end
 
   # Dependencies can be Hex packages:
