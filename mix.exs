@@ -27,6 +27,6 @@ defmodule Kaffe.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [{:brod, github: "klarna/brod", tag: "master"}]
   end
 end
