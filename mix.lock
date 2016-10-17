@@ -1,0 +1,4 @@
+%{"brod": {:git, "https://github.com/klarna/brod.git", "c24eb2b496841904a2dac3bfc5413a6bd635fd94", [tag: "master"]},
+  "kafka_protocol": {:git, "https://github.com/klarna/kafka_protocol.git", "e36ef3acd1ddbe2fd6112bfcdd9d761f549b75f1", [tag: "0.7.3"]},
+  "snappyer": {:git, "https://github.com/zmstone/snappyer", "1fc7d22e553e8d6510e331b4139641e616ef799f", [tag: "1.1.3-1.0.4"]},
+  "supervisor3": {:git, "https://github.com/klarna/supervisor3", "7ad32c5d96706118bd963247545087eacbdd2152", [tag: "1.1.3"]}}
