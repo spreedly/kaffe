@@ -1,0 +1,2 @@
+defmodule Kaffe do
+end
