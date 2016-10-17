@@ -41,7 +41,7 @@ defmodule Consumer do
   """
   def init(_topic, [message_handler, async]) do
     committed_offsets = []
-    {:ok, committed_offsets, %KafkaConsumer.State{message_handler: message_handler, async: async}}
+    {:ok, committed_offsets, %Consumer.State{message_handler: message_handler, async: async}}
   end
 
   @doc """
