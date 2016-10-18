@@ -42,20 +42,44 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
 
 `Kaffe.Consumer` is expected to be a supervised process that consumes messages from a Kafka topic/partition using an already running brod client. In the future it will also support starting a brod client itself as needed.
 
-  1. Add a `handle_message/1` function to a local module. This function will be called with each Kafka message as a map.
+  1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Because we're using a consumer group the message map will include the topic and partition.
 
     ```elixir
-    %{attributes: 0, crc: -1821454227, key: "message key", magic_byte: 0, offset: 7, value: "message value"}
+    %{
+      attributes: 0,
+      crc: 1914336469,
+      key: "",
+      magic_byte: 0,
+      offset: 41,
+      partition: 0,
+      topic: "sdball",
+      value: "awesome24\n"
+    }
     ```
 
   2. Add `Kaffe.Consumer` as a worker in your supervision tree
 
+    The Consumer requires several arguments:
+
+    - `client`: the id of an active brod client to use for consuming
+    - `consumer_group`: the consumer group id (should be unique to your app)
+    - `topics`: the list of Kafka topics to consume
+    - `message_handler`: the module that will be called for each Kafka message
+    - `async`: if false then Kafka messages are acknowledged after handling is complete
+
+    Example:
+
     ```elixir
-    # worker(Kaffe.Consumer, [brod_client, topic, partition, consumer_config, message_handler, async])
-    worker(Kaffe.Consumer, [:brod_client_1, "commitlog", :all, [], MessageWorker, false])
+    client = :brod_client
+    topics = ["commitlog"]
+    consumer_group = "demo-commitlog-consumer"
+    message_handler = MessageProcessor
+    async = false
+
+    worker(Kaffe.Consumer, [client, consumer_group, topics, message_handler, async])
     ```
 
-    In this example `:brod_client_1` will be used to consume messages from `:all` partitions of the "commitlog" topic and call `MessageWorker.handle_message/1`. The Kafka messages will be automatically acknowledged when the `MessageWorker.handle_message/1` function completes.
+    In this example `:brod_client` will be used to consume messages from the "commitlog" topic and call `MessageWorker.handle_message/1` with each message. The Kafka messages will be automatically acknowledged when the `MessageWorker.handle_message/1` function completes.
 
     Future versions of Kaffe will support asynchronous message acknowledgement.
 
