@@ -19,17 +19,20 @@ defmodule Kaffe.Consumer do
     defstruct message_handler: nil, async: false
   end
 
+  ## -------------------------------------------------------------------------
+  ## public api
+  ## -------------------------------------------------------------------------
+
   @doc """
   Start a Kafka consumer
 
-  - `client`: the name of the running brod client to use for the subscription
-  - `topics`: the Kafka topics to consume
-  - `partition`: the topic partition to listen on (use `:all` for all partitions)
-  - `consumer_config`: any specific brod consumer configuration values
-  - `message_handler`: the project module that will be called for each Kafka message
-  - `async`: if false then Kafka messages are acknowledged after handling is complete
+    - `client`: the id of an active brod client to use for consuming
+    - `consumer_group`: the consumer group id (should be unique to your app)
+    - `topics`: the list of Kafka topics to consume
+    - `message_handler`: the module that will be called for each Kafka message
+    - `async`: if false then Kafka messages will be acknowledged after handling is complete
 
-  NOTE: Async message processing is not yet implemented.
+  Note: If `async` is true then you'll need call `ack/4` to acknowledge offsets per topic and partition after messages are processed.
   """
   def start_link(client, consumer_group, topics, message_handler, async) do
     group_config = [offset_commit_policy: :commit_to_kafka_v2, offset_commit_interval_seconds: 5]
@@ -40,22 +43,58 @@ defmodule Kaffe.Consumer do
   end
 
   @doc """
+  Commit the offset to Kafka for the topic/partition and group consumer.
+
+  You can either pass the pid of the running Consumer or the group consumer id.
+
+  e.g.
+
+  ```
+  Kaffe.Consumer.ack(pid, "commitlog", 0, 124)
+
+  Kaffe.Consumer.ack("index-consumer-group", "commitlog", 0, 124)
+  ```
+  """
+  def ack(pid, topic, partition, offset) when is_pid(pid) do
+    :brod_group_subscriber.ack(pid, topic, partition, offset)
+  end
+
+  def ack(group_consumer, topic, partition, offset) do
+    group_consumer
+    |> String.to_atom
+    |> :brod_group_subscriber.ack(topic, partition, offset)
+  end
+
+  ## -------------------------------------------------------------------------
+  ## callbacks
+  ## -------------------------------------------------------------------------
+
+  @doc """
   Initialize the consumer loop.
   """
-  def init(_topic, [message_handler, async]) do
+  def init(consumer_group, [message_handler, async]) do
+    Process.register(self, String.to_atom(consumer_group))
     {:ok, %Kaffe.Consumer.State{message_handler: message_handler, async: async}}
   end
 
   @doc """
-  Call the message handler and acknowledge the message as processed.
+  Call the message handler with the Kafka message.
 
-  This is a synchonous Kafka acknowledgement. This function will block until
-  the message_handler's work is finished.
+  If `async` is true you'll need to manually call `ack/4` to acknowledge messages as processed per topic and partition.
   """
   def handle_message(topic, partition, msg, %{async: false, message_handler: handler} = state) do
     :ok = apply(handler, :handle_message, [compile_message(msg, topic, partition)])
     {:ok, :ack, state}
   end
+
+  def handle_message(topic, partition, msg, %{async: true, message_handler: handler} = state) do
+    :ok = apply(handler, :handle_message, [compile_message(msg, topic, partition)])
+    {:ok, state}
+  end
+
+  ## -------------------------------------------------------------------------
+  ## internal functions
+  ## -------------------------------------------------------------------------
 
   defp compile_message(msg, topic, partition) do
     Map.merge(%{topic: topic, partition: partition}, kafka_message_to_map(msg))

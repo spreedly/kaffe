@@ -40,7 +40,7 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
 
 ### Consumer
 
-`Kaffe.Consumer` is expected to be a supervised process that consumes messages from a Kafka topic/partition using an already running brod client. In the future it will also support starting a brod client itself as needed.
+`Kaffe.Consumer` is expected to be a supervised process that consumes messages from a Kafka topic/partition using an already running brod client.
 
   1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Because we're using a consumer group the message map will include the topic and partition.
 
@@ -81,5 +81,16 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
 
     In this example `:brod_client` will be used to consume messages from the "commitlog" topic and call `MessageWorker.handle_message/1` with each message. The Kafka messages will be automatically acknowledged when the `MessageWorker.handle_message/1` function completes.
 
-    Future versions of Kaffe will support asynchronous message acknowledgement.
+#### async message acknowledgement
 
+If you want to asynchronously acknowledge message offsets then set `async` to `true` and either keep track of the pid for the Consumer process or your `consumer_group` name.
+
+After messages have processed call `Kaffe.Consumer.ack/4` with either `pid, topic, partition, offset` or `consumer_group, topic, partition, offset`.
+
+e.g.
+
+```elixir
+partition = 0
+offset = 147
+Kaffe.Consumer.ack("commitlog-index-group", "commitlog", partition, offset)
+```
