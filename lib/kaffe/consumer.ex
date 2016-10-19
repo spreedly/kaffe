@@ -51,7 +51,7 @@ defmodule Kaffe.Consumer do
   acknowledgement you will be able to process messages faster but will need to
   take on the burden of ensuring no message is lost.
   """
-  def start_link(client, consumer_group, topics, message_handler, async) do
+  def start_link(client, consumer_group, topics, message_handler, async \\ false) do
     group_config = [offset_commit_policy: :commit_to_kafka_v2, offset_commit_interval_seconds: 5]
     consumer_config = [begin_offset: :earliest]
     init_args = [message_handler, async]
