@@ -8,7 +8,7 @@ An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka cl
 
     ```elixir
     def deps do
-      [{:kaffe, github: "spreedly/kaffe", tag: "master"}]
+      [{:kaffe, github: "spreedly/kaffe", branch: "master"}]
     end
     ```
 
