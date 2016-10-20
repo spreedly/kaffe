@@ -133,6 +133,6 @@ defmodule Kaffe.Producer do
   end
 
   defp next_partition(%{partition: partition, total: total}, :round_robin) do
-    apply(Kaffe.PartitionSelector, :round_robin, [partition, total])
+    Kaffe.PartitionSelector.round_robin(partition, total)
   end
 end
