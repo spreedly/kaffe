@@ -120,6 +120,10 @@ defmodule Kaffe.Producer do
     {:reply, :ok, state}
   end
 
+  ## -------------------------------------------------------------------------
+  ## internal
+  ## -------------------------------------------------------------------------
+
   defp analyze(client, topics) do
     topics
     |> Enum.reduce(%{}, fn(topic, details) ->
