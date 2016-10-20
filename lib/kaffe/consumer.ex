@@ -36,11 +36,17 @@ defmodule Kaffe.Consumer do
   @doc """
   Start a Kafka consumer
 
+  Required arguments:
+
     - `client`: the id of an active brod client to use for consuming
     - `consumer_group`: the consumer group id (should be unique to your app)
     - `topics`: the list of Kafka topics to consume
     - `message_handler`: the module that will be called for each Kafka message
-    - `async`: if false then Kafka offsets will not be automatically acknowledged
+
+  Optional:
+
+    - `async`: if false then Kafka offsets will not be automatically
+      acknowledged (default: false)
 
   Note: If `async` is true then you'll need to call `ack/2` to acknowledge
   Kafka messages as processed.
