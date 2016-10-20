@@ -126,3 +126,56 @@ If you need asynchronous message consumption:
 Kafka only tracks a single numeric offset, not individual messages. If a message fails and a later offset is committed then the failed message will _not_ be sent again.
 
 It's possible that your topic and system are entirely ok with losing some messages (i.e. frequent metrics that aren't individually important).
+
+### Producer
+
+`Kaffe.Producer` is also a supervised process that will handle automatically selecting the partition to produce to.
+
+  1. Add `Kaffe.Producer` as a worker in your supervision tree.
+
+  Required arguments:
+
+  - `client`: a running brod client configured to produce
+  - `topics` or `topic`: a list of topics or a single topic string
+
+  Optional:
+
+  - `strategy`: a partition selection strategy (default: `:round_robin`)
+
+#### Configuration Examples
+
+```elixir
+client = :brod_client_1
+topics = ["output1", "output2"]
+worker(Kaffe.Producer, [client, topics])
+```
+
+```elixir
+client = :brod_client_1
+topic = "whitelist"
+worker(Kaffe.Producer, [client, topic])
+```
+
+#### Usage Examples
+
+Currently only synchronous message production is supported.
+
+There are three ways to produce:
+
+- `key`/`value`: The key/value will be produced to the first topic given to the producer when it was started. The partition will automatically be selected with the chosen strategy.
+    ```elixir
+    Kaffe.Producer.produce_sync("key", "value")
+    ```
+
+- `topic`/`key`/`value`: The key/value will be produced to the given topic.
+
+    ```elixir
+    Kaffe.Producer.produce_sync("whitelist", "key", "value")
+    ```
+
+- `topic`/`partition`/`key`/`value`: The key/value will be produced to the given topic/partition.
+
+    ```elixir
+    Kaffe.Producer.produce_sync("whitelist", 2, "key", "value")
+    ```
+
