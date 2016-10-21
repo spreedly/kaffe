@@ -7,6 +7,7 @@ defmodule Kaffe.Mixfile do
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     elixirc_paths: elixirc_paths(Mix.env),
      deps: deps()]
   end
 
@@ -16,6 +17,9 @@ defmodule Kaffe.Mixfile do
   def application do
     [applications: [:logger, :brod]]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   # Dependencies can be Hex packages:
   #

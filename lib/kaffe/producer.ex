@@ -13,12 +13,13 @@ defmodule Kaffe.Producer do
   defmodule State do
     @moduledoc """
     - `client`: the brod client to call for producing
+    - `topics`: a list of configured topics
     - `partition_strategy`: the strategy to determine the next partition
     - `partition_details`: a map of partition details keyed by topic
       - `total`: the number of partitions
       - `partition`: the next partition to produce to
     """
-    defstruct client: nil, partition_strategy: nil, partition_details: %{}
+    defstruct client: nil, topics: nil, partition_strategy: nil, partition_details: %{}
   end
 
   ## -------------------------------------------------------------------------
@@ -85,6 +86,7 @@ defmodule Kaffe.Producer do
   def init([client, topics, strategy]) do
     state = %Kaffe.Producer.State{
       client: client,
+      topics: topics,
       partition_details: analyze(client, topics),
       partition_strategy: strategy}
     {:ok, state}
@@ -94,7 +96,8 @@ defmodule Kaffe.Producer do
   Sync produce the `key`/`value` to the default topic
   """
   def handle_call({:produce_sync, key, value}, _from, state) do
-    topic_key = state.partition_details |> Map.keys |> List.first
+    topic = state.topics |> List.first
+    topic_key = String.to_atom(topic)
     topic = Atom.to_string(topic_key)
     details = state.partition_details[topic_key]
     @kafka.produce_sync(state.client, topic, details.partition, key, value)
