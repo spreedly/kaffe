@@ -6,6 +6,7 @@ defmodule Kaffe.Producer do
   """
 
   @name :kaffe_producer
+  @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
 
   use GenServer
 
@@ -96,7 +97,7 @@ defmodule Kaffe.Producer do
     topic_key = state.partition_details |> Map.keys |> List.first
     topic = Atom.to_string(topic_key)
     details = state.partition_details[topic_key]
-    :brod.produce_sync(state.client, topic, details.partition, key, value)
+    @kafka.produce_sync(state.client, topic, details.partition, key, value)
     next_partition = next_partition(details, state.partition_strategy)
     {:reply, :ok, put_in(state.partition_details[topic_key].partition, next_partition)}
   end
@@ -107,7 +108,7 @@ defmodule Kaffe.Producer do
   def handle_call({:produce_sync, topic, key, value}, _from, state) do
     topic_key = String.to_atom(topic)
     details = state.partition_details[topic_key]
-    :brod.produce_sync(state.client, topic, details.partition, key, value)
+    @kafka.produce_sync(state.client, topic, details.partition, key, value)
     next_partition = next_partition(details, state.partition_strategy)
     {:reply, :ok, put_in(state.partition_details[topic_key].partition, next_partition)}
   end
@@ -116,7 +117,7 @@ defmodule Kaffe.Producer do
   Sync produce the `key`/`value` to the given `topic` and `partition`
   """
   def handle_call({:produce_sync, topic, partition, key, value}, _from, state) do
-    :brod.produce_sync(state.client, topic, partition, key, value)
+    @kafka.produce_sync(state.client, topic, partition, key, value)
     {:reply, :ok, state}
   end
 
@@ -127,7 +128,7 @@ defmodule Kaffe.Producer do
   defp analyze(client, topics) do
     topics
     |> Enum.reduce(%{}, fn(topic, details) ->
-       {:ok, partition_count} = :brod.get_partitions_count(client, topic)
+       {:ok, partition_count} = @kafka.get_partitions_count(client, topic)
        Map.put(details, String.to_atom(topic), %{partition: 0, total: partition_count})
     end)
   end

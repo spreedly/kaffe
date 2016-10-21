@@ -15,6 +15,9 @@ defmodule Kaffe.Consumer do
 
   @behaviour :brod_group_subscriber
 
+  @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
+  @group_subscriber Application.get_env(:kaffe, :group_subscriber_mod, :brod_group_subscriber)
+
   require Record
   import Record, only: [defrecord: 2, extract: 2]
   defrecord :kafka_message, extract(:kafka_message, from_lib: "brod/include/brod.hrl")
@@ -61,7 +64,7 @@ defmodule Kaffe.Consumer do
     group_config = [offset_commit_policy: :commit_to_kafka_v2, offset_commit_interval_seconds: 5]
     consumer_config = [begin_offset: :earliest]
     init_args = [message_handler, async]
-    :brod.start_link_group_subscriber(
+    @kafka.start_link_group_subscriber(
       client, consumer_group, topics, group_config, consumer_config, __MODULE__, init_args)
   end
 
@@ -77,7 +80,7 @@ defmodule Kaffe.Consumer do
   ```
   """
   def ack(pid, %{topic: topic, partition: partition, offset: offset}) do
-    :brod_group_subscriber.ack(pid, topic, partition, offset)
+    @group_subscriber.ack(pid, topic, partition, offset)
   end
 
   ## -------------------------------------------------------------------------
