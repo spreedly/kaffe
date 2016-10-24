@@ -20,4 +20,8 @@ defmodule Kaffe.PartitionSelector do
       0
     end
   end
+
+  def random(total) do
+    :crypto.rand_uniform(0, total)
+  end
 end

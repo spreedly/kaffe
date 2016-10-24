@@ -47,30 +47,53 @@ defmodule Kaffe.ProducerTest do
     assert_receive [:produce_sync, "topic2", ^partition, "key", "value"]
   end
 
-  test "producer uses the configured partition selection strategy when it chooses the next partition", c do
-    starting_state = c.producer_state
-    assert starting_state.partition_strategy == :round_robin
+  describe "partition selection" do
+    test "round robin strategy", c do
+      state = c.producer_state
+      state = %{state | partition_strategy: :round_robin}
 
-    {:reply, :ok, new_state} = Producer.handle_call(
-      {:produce_sync, "topic", "key", "value"}, self, starting_state)
-    assert_receive [:produce_sync, "topic", 0, "key", "value"]
+      {:reply, :ok, new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, state)
+      assert_receive [:produce_sync, "topic", 0, "key", "value"]
 
-    {:reply, :ok, new_state} = Producer.handle_call(
-      {:produce_sync, "topic", "key", "value"}, self, new_state)
-    assert_receive [:produce_sync, "topic", 1, "key", "value"]
+      {:reply, :ok, new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic", 1, "key", "value"]
 
-    Producer.handle_call(
-      {:produce_sync, "topic", "key", "value"}, self, new_state)
-    assert_receive [:produce_sync, "topic", 2, "key", "value"]
-  end
+      {:reply, :ok, _new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic", 2, "key", "value"]
+    end
 
-  test "producer does not use the partition selection strategy when given direct partition", c do
-    {:reply, :ok, new_state} = Producer.handle_call(
-     {:produce_sync, "topic", 0, "key", "value"}, self, c.producer_state)
-    assert_receive [:produce_sync, "topic", 0, "key", "value"]
+    test "random partition strategy", c do
+      state = c.producer_state
+      state = %{state | partition_strategy: :random}
 
-    Producer.handle_call(
-      {:produce_sync, "topic", 0, "key", "value"}, self, new_state)
-    assert_receive [:produce_sync, "topic", 0, "key", "value"]
+      {:reply, :ok, new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, state)
+      assert_receive [:produce_sync, "topic", 0, "key", "value"]
+
+      {:reply, :ok, new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic", random_partition, "key", "value"]
+
+      assert (0 <= random_partition) && (random_partition <= 19)
+
+      {:reply, :ok, _new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic", random_partition, "key", "value"]
+
+      assert (0 <= random_partition) && (random_partition <= 19)
+    end
+
+    test "producer does not use a selection strategy when given a direct partition", c do
+      {:reply, :ok, new_state} = Producer.handle_call(
+       {:produce_sync, "topic", 0, "key", "value"}, self, c.producer_state)
+      assert_receive [:produce_sync, "topic", 0, "key", "value"]
+
+      Producer.handle_call(
+        {:produce_sync, "topic", 0, "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic", 0, "key", "value"]
+    end
   end
 end

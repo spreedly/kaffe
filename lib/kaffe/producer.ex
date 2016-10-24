@@ -141,4 +141,8 @@ defmodule Kaffe.Producer do
   defp next_partition(_topic, current_partition, partitions_count, _key, _value, :round_robin) do
     Kaffe.PartitionSelector.round_robin(current_partition, partitions_count)
   end
+
+  defp next_partition(_topic, _current_partition, partitions_count, _key, _value, :random) do
+    Kaffe.PartitionSelector.random(partitions_count)
+  end
 end
