@@ -9,6 +9,7 @@ defmodule TestBrod do
 
   def produce_sync(_client, topic, partition, key, value) do
     send self, [:produce_sync, topic, partition, key, value]
+    :ok
   end
 
   def get_partitions_count(_client, _topic), do: {:ok, @test_partition_count}

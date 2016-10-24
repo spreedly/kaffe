@@ -97,23 +97,16 @@ defmodule Kaffe.Producer do
   """
   def handle_call({:produce_sync, key, value}, _from, state) do
     topic = state.topics |> List.first
-    topic_key = String.to_atom(topic)
-    topic = Atom.to_string(topic_key)
-    details = state.partition_details[topic_key]
-    @kafka.produce_sync(state.client, topic, details.partition, key, value)
-    next_partition = next_partition(details, state.partition_strategy)
-    {:reply, :ok, put_in(state.partition_details[topic_key].partition, next_partition)}
+    {:ok, new_state} = produce(topic, key, value, state)
+    {:reply, :ok, new_state}
   end
 
   @doc """
   Sync produce the `key`/`value` to the given `topic`
   """
   def handle_call({:produce_sync, topic, key, value}, _from, state) do
-    topic_key = String.to_atom(topic)
-    details = state.partition_details[topic_key]
-    @kafka.produce_sync(state.client, topic, details.partition, key, value)
-    next_partition = next_partition(details, state.partition_strategy)
-    {:reply, :ok, put_in(state.partition_details[topic_key].partition, next_partition)}
+    {:ok, new_state} = produce(topic, key, value, state)
+    {:reply, :ok, new_state}
   end
 
   @doc """
@@ -127,6 +120,14 @@ defmodule Kaffe.Producer do
   ## -------------------------------------------------------------------------
   ## internal
   ## -------------------------------------------------------------------------
+
+  defp produce(topic, key, value, state) do
+    topic_key = String.to_atom(topic)
+    details = state.partition_details[topic_key]
+    :ok = @kafka.produce_sync(state.client, topic, details.partition, key, value)
+    next_partition = next_partition(details, state.partition_strategy)
+    {:ok, put_in(state.partition_details[topic_key].partition, next_partition)}
+  end
 
   defp analyze(client, topics) do
     topics
