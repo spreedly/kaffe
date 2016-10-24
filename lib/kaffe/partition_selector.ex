@@ -4,6 +4,9 @@ defmodule Kaffe.PartitionSelector do
 
   ## Examples
 
+  iex> Kaffe.PartitionSelector.round_robin(nil, 3)
+  0
+
   iex> Kaffe.PartitionSelector.round_robin(0, 3)
   1
 

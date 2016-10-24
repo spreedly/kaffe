@@ -122,25 +122,25 @@ defmodule Kaffe.Producer do
   defp produce(topic, key, value, state) do
     topic_key = String.to_atom(topic)
     details = state.partition_details[topic_key]
-    :ok = @kafka.produce_sync(state.client, topic, details.partition, key, value)
-    next_partition = next_partition(
+    partition = choose_partition(
       topic, details.partition, details.total, key, value, state.partition_strategy)
-    {:ok, put_in(state.partition_details[topic_key].partition, next_partition)}
+    :ok = @kafka.produce_sync(state.client, topic, partition, key, value)
+    {:ok, put_in(state.partition_details[topic_key].partition, partition)}
   end
 
   defp analyze(client, topics) do
     topics
     |> Enum.reduce(%{}, fn(topic, details) ->
        {:ok, partition_count} = @kafka.get_partitions_count(client, topic)
-       Map.put(details, String.to_atom(topic), %{partition: 0, total: partition_count})
+       Map.put(details, String.to_atom(topic), %{partition: nil, total: partition_count})
     end)
   end
 
-  defp next_partition(_topic, current_partition, partitions_count, _key, _value, :round_robin) do
+  defp choose_partition(_topic, current_partition, partitions_count, _key, _value, :round_robin) do
     Kaffe.PartitionSelector.round_robin(current_partition, partitions_count)
   end
 
-  defp next_partition(_topic, _current_partition, partitions_count, _key, _value, :random) do
+  defp choose_partition(_topic, _current_partition, partitions_count, _key, _value, :random) do
     Kaffe.PartitionSelector.random(partitions_count)
   end
 end

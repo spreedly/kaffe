@@ -14,8 +14,8 @@ defmodule Kaffe.ProducerTest do
         client: :client,
         topics: ["topic", "topic2"],
         partition_details: %{
-          topic: %{partition: 0, total: 20},
-          topic2: %{partition: 0, total: 20}
+          topic: %{partition: nil, total: 3},
+          topic2: %{partition: nil, total: 20}
         },
         partition_strategy: :round_robin
       }
@@ -26,7 +26,7 @@ defmodule Kaffe.ProducerTest do
     assert {:ok, %{partition_details: details}} = Producer.init([c.client, c.topics, c.strategy])
     c.topics
     |> Enum.each(fn(topic) ->
-      assert %{partition: 0, total: @test_partition_count} == details[String.to_atom(topic)]
+      assert %{partition: nil, total: @test_partition_count} == details[String.to_atom(topic)]
     end)
   end
 
@@ -60,9 +60,13 @@ defmodule Kaffe.ProducerTest do
         {:produce_sync, "topic", "key", "value"}, self, new_state)
       assert_receive [:produce_sync, "topic", 1, "key", "value"]
 
-      {:reply, :ok, _new_state} = Producer.handle_call(
+      {:reply, :ok, new_state} = Producer.handle_call(
         {:produce_sync, "topic", "key", "value"}, self, new_state)
       assert_receive [:produce_sync, "topic", 2, "key", "value"]
+
+      {:reply, :ok, _new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic", 0, "key", "value"]
     end
 
     test "random partition strategy", c do
@@ -71,7 +75,9 @@ defmodule Kaffe.ProducerTest do
 
       {:reply, :ok, new_state} = Producer.handle_call(
         {:produce_sync, "topic", "key", "value"}, self, state)
-      assert_receive [:produce_sync, "topic", 0, "key", "value"]
+      assert_receive [:produce_sync, "topic", random_partition, "key", "value"]
+
+      assert (0 <= random_partition) && (random_partition <= 19)
 
       {:reply, :ok, new_state} = Producer.handle_call(
         {:produce_sync, "topic", "key", "value"}, self, new_state)
