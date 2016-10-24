@@ -125,7 +125,8 @@ defmodule Kaffe.Producer do
     topic_key = String.to_atom(topic)
     details = state.partition_details[topic_key]
     :ok = @kafka.produce_sync(state.client, topic, details.partition, key, value)
-    next_partition = next_partition(details, state.partition_strategy)
+    next_partition = next_partition(
+      topic, details.partition, details.total, key, value, state.partition_strategy)
     {:ok, put_in(state.partition_details[topic_key].partition, next_partition)}
   end
 
@@ -137,7 +138,7 @@ defmodule Kaffe.Producer do
     end)
   end
 
-  defp next_partition(%{partition: partition, total: total}, :round_robin) do
-    Kaffe.PartitionSelector.round_robin(partition, total)
+  defp next_partition(_topic, current_partition, partitions_count, _key, _value, :round_robin) do
+    Kaffe.PartitionSelector.round_robin(current_partition, partitions_count)
   end
 end
