@@ -179,3 +179,5 @@ There are three ways to produce:
     Kaffe.Producer.produce_sync("whitelist", 2, "key", "value")
     ```
 
+    **NOTE**: With this approach Kaffe will not calculate the next partition since it assumes you're taking over that job by giving it a specific partition.
+
