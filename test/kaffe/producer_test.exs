@@ -92,6 +92,28 @@ defmodule Kaffe.ProducerTest do
       assert (0 <= random_partition) && (random_partition <= 19)
     end
 
+    test "given function partition strategy", c do
+      choose_partition = fn(topic, current_partition, partitions_count, key, value) ->
+        assert topic == "topic"
+        assert current_partition == nil || current_partition == 0
+        assert partitions_count == 3
+        assert key == "key"
+        assert value == "value"
+        0
+      end
+
+      state = c.producer_state
+      state = %{state | partition_strategy: choose_partition}
+
+      {:reply, :ok, new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, state)
+      assert_receive [:produce_sync, "topic", 0, "key", "value"]
+
+      {:reply, :ok, _new_state} = Producer.handle_call(
+        {:produce_sync, "topic", "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic", 0, "key", "value"]
+    end
+
     test "producer does not use a selection strategy when given a direct partition", c do
       {:reply, :ok, new_state} = Producer.handle_call(
        {:produce_sync, "topic", 0, "key", "value"}, self, c.producer_state)

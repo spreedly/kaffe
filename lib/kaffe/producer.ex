@@ -36,11 +36,13 @@ defmodule Kaffe.Producer do
     partition. Default `:round_robin`.
     - `:round_robin` - Cycle through the available partitions
     - `:random` - Select a random partition
+    - function - Pass a function as an argument that accepts five arguments and
+      returns the partition number to use for the message
+        - `topic, current_partition, partitions_count, key, value`
 
   On initialization the producer will analyze the given topic(s) and determine
   their available partitions. That analysis will be paired with the given
-  partition selection strategy to determine how the producer cycles through the
-  partitions.
+  partition selection strategy to select the partition per message.
 
   Clients can also specify a partition directly when producing.
   """
@@ -142,5 +144,9 @@ defmodule Kaffe.Producer do
 
   defp choose_partition(_topic, _current_partition, partitions_count, _key, _value, :random) do
     Kaffe.PartitionSelector.random(partitions_count)
+  end
+
+  defp choose_partition(topic, current_partition, partitions_count, key, value, fun) when is_function(fun) do
+    fun.(topic, current_partition, partitions_count, key, value)
   end
 end

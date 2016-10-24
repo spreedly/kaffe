@@ -143,6 +143,28 @@ It's possible that your topic and system are entirely ok with losing some messag
   - `strategy` - a partition selection strategy (default: `:round_robin`)
     - `:round_robin` - cycle through each partition
     - `:random` - select a random partition
+    - function - a given function to call to determine the correct partition
+
+  Examples
+
+    ```elixir
+    # prepare for producing to the whitelist topic using round robin partitioning
+    Kaffe.Producer.start_link(:brod_client_1, "whitelist")
+
+    # prepare for producing to the whitelist topic using random partitioning
+    Kaffe.Producer.start_link(:brod_client_1, "whitelist", :random)
+
+    # prepare for producing to the whitelist topic using a local function
+    # assuming KafkaMeta.choose_partition/5 is locally defined
+
+    defmodule KafkaMeta do
+      def choose_partition(topic, current_partition, partitions_count, key, value) do
+        # some calculation to return an integer between 0 and partitions_count-1
+      end
+    end
+
+    Kaffe.Producer.start_link(:brod_client_1, "whitelist", &KafkaMeta.choose_partition/5)
+    ```
 
 #### Configuration Examples
 
@@ -156,6 +178,18 @@ worker(Kaffe.Producer, [client, topics])
 client = :brod_client_1
 topic = "whitelist"
 worker(Kaffe.Producer, [client, topic])
+```
+
+```elixir
+client = :brod_client_1
+topic = "whitelist"
+worker(Kaffe.Producer, [client, topic, :random])
+```
+
+```elixir
+client = :brod_client_1
+topic = "whitelist"
+worker(Kaffe.Producer, [client, topic, &Producer.choose_partition/5])
 ```
 
 #### Usage Examples
