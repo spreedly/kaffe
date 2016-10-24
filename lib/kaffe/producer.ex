@@ -12,12 +12,12 @@ defmodule Kaffe.Producer do
 
   defmodule State do
     @moduledoc """
-    - `client`: the brod client to call for producing
-    - `topics`: a list of configured topics
-    - `partition_strategy`: the strategy to determine the next partition
-    - `partition_details`: a map of partition details keyed by topic
-      - `total`: the number of partitions
-      - `partition`: the next partition to produce to
+    - `client` - the brod client to call for producing
+    - `topics` - a list of configured topics
+    - `partition_strategy` - the strategy to determine the next partition
+    - `partition_details` - a map of partition details keyed by topic
+      - `total` - the number of partitions
+      - `partition` - the next partition to produce to
     """
     defstruct client: nil, topics: nil, partition_strategy: nil, partition_details: %{}
   end
@@ -29,15 +29,13 @@ defmodule Kaffe.Producer do
   @doc """
   Start a Kafka producer
 
-  - `client`: a running brod client to use for producing
-  - `topics` or `topic`: either a list of topics or a single topic to prep for
+  - `client` - a running brod client to use for producing
+  - `topics` or `topic` - either a list of topics or a single topic to prep for
     producing
-  - (optional) `strategy`: the strategy to use when selecting the next
+  - (optional) `strategy` - the strategy to use when selecting the next
     partition. Default `:round_robin`.
-
-  Available partition strategies:
-
-  - `:round_robin`: Cycle through the available partitions
+    - `:round_robin` - Cycle through the available partitions
+    - `:random` - Select a random partition
 
   On initialization the producer will analyze the given topic(s) and determine
   their available partitions. That analysis will be paired with the given

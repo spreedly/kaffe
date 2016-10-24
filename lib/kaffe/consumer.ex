@@ -26,8 +26,8 @@ defmodule Kaffe.Consumer do
     @moduledoc """
     Running state for the consumer.
 
-    - `message_handler`: The module to call with each Kafka message
-    - `async`: Kafka offset processing behavior
+    - `message_handler` - The module to call with each Kafka message
+    - `async` - Kafka offset processing behavior
     """
     defstruct message_handler: nil, async: false
   end
@@ -41,14 +41,14 @@ defmodule Kaffe.Consumer do
 
   Required arguments:
 
-    - `client`: the id of an active brod client to use for consuming
-    - `consumer_group`: the consumer group id (should be unique to your app)
-    - `topics`: the list of Kafka topics to consume
-    - `message_handler`: the module that will be called for each Kafka message
+    - `client` - the id of an active brod client to use for consuming
+    - `consumer_group` - the consumer group id (should be unique to your app)
+    - `topics` - the list of Kafka topics to consume
+    - `message_handler` - the module that will be called for each Kafka message
 
   Optional:
 
-    - `async`: if false then Kafka offsets will not be automatically
+    - `async` - if false then Kafka offsets will not be automatically
       acknowledged (default: false)
 
   Note: If `async` is true then you'll need to call `ack/2` to acknowledge
@@ -71,8 +71,8 @@ defmodule Kaffe.Consumer do
   @doc """
   Acknowledge the Kafka message as processed.
 
-  - `pid`: the pid your `handle_message/2` function was given as the first argument
-  - `message`: the Kafka message your `handle_message/2` function was given as
+  - `pid` - the pid your `handle_message/2` function was given as the first argument
+  - `message` - the Kafka message your `handle_message/2` function was given as
     the second argument
 
   ```

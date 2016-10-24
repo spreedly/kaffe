@@ -60,14 +60,14 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
 
     The Consumer requires several arguments:
 
-    - `client`: the id of an active brod client to use for consuming
-    - `consumer_group`: the consumer group id (should be unique to your app)
-    - `topics`: the list of Kafka topics to consume
-    - `message_handler`: the module that will be called for each Kafka message
+    - `client` - the id of an active brod client to use for consuming
+    - `consumer_group` - the consumer group id (should be unique to your app)
+    - `topics` - the list of Kafka topics to consume
+    - `message_handler` - the module that will be called for each Kafka message
 
     Optional:
 
-    - `async`: if false then Kafka messages are automatically acknowledged after handling is complete (default: `false`)
+    - `async` - if false then Kafka messages are automatically acknowledged after handling is complete (default: `false`)
 
     Example:
 
@@ -135,12 +135,14 @@ It's possible that your topic and system are entirely ok with losing some messag
 
   Required arguments:
 
-  - `client`: a running brod client configured to produce
-  - `topics` or `topic`: a list of topics or a single topic string
+  - `client` - a running brod client configured to produce
+  - `topics` or `topic` - a list of topics or a single topic string
 
   Optional:
 
-  - `strategy`: a partition selection strategy (default: `:round_robin`)
+  - `strategy` - a partition selection strategy (default: `:round_robin`)
+    - `:round_robin` - cycle through each partition
+    - `:random` - select a random partition
 
 #### Configuration Examples
 
@@ -162,18 +164,18 @@ Currently only synchronous message production is supported.
 
 There are three ways to produce:
 
-- `key`/`value`: The key/value will be produced to the first topic given to the producer when it was started. The partition will automatically be selected with the chosen strategy.
+- `key`/`value` - The key/value will be produced to the first topic given to the producer when it was started. The partition will automatically be selected with the chosen strategy.
     ```elixir
     Kaffe.Producer.produce_sync("key", "value")
     ```
 
-- `topic`/`key`/`value`: The key/value will be produced to the given topic.
+- `topic`/`key`/`value` - The key/value will be produced to the given topic.
 
     ```elixir
     Kaffe.Producer.produce_sync("whitelist", "key", "value")
     ```
 
-- `topic`/`partition`/`key`/`value`: The key/value will be produced to the given topic/partition.
+- `topic`/`partition`/`key`/`value` - The key/value will be produced to the given topic/partition.
 
     ```elixir
     Kaffe.Producer.produce_sync("whitelist", 2, "key", "value")
