@@ -20,18 +20,17 @@ An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka cl
     end
     ```
 
-  3. Configure at least one `brod` client in your application:
+  3. Configure Kaffe with your Kafka endpoints
+
+    Each endpoint is `hostname: port`
 
     ```elixir
-	config :brod, [
-	  clients: [
-		brod_client: [
-		  auto_start_producers: true,
-		  endpoints: [kafka: 9092],
-		]
-	  ]
-	]
+    config :kaffe,
+      kafka_consumer_endpoints: [kafka: 9092],
+      kafka_producer_endpoints: [kafka: 9092]
     ```
+
+    If you only need to consume or produce then you only need to configure those respective endpoints.
 
 ## Usage
 
@@ -39,9 +38,9 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
 
 ### Consumer
 
-`Kaffe.Consumer` is expected to be a supervised process that consumes messages from a Kafka topic/partition using an already running brod client.
+`Kaffe.Consumer` is expected to be a supervised process that consumes messages from a Kafka topic or list of topics.
 
-  1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Because we're using a consumer group the message map will include the topic and partition.
+  1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
     ```elixir
     %{
@@ -58,11 +57,10 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
 
   2. Add `Kaffe.Consumer` as a worker in your supervision tree
 
-    The Consumer requires several arguments:
+    Required arguments:
 
-    - `client` - the id of an active brod client to use for consuming
     - `consumer_group` - the consumer group id (should be unique to your app)
-    - `topics` - the list of Kafka topics to consume
+    - `topics` - the list of Kafka topics or a single topic to consume
     - `message_handler` - the module that will be called for each Kafka message
 
     Optional:
@@ -72,12 +70,11 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
     Example:
 
     ```elixir
-    client = :brod_client
-    topics = ["commitlog"]
     consumer_group = "demo-commitlog-consumer"
+    topic = "commitlog"
     message_handler = MessageProcessor
 
-    worker(Kaffe.Consumer, [client, consumer_group, topics, message_handler])
+    worker(Kaffe.Consumer, [consumer_group, topic, message_handler])
     ```
 
     ```elixir
@@ -85,12 +82,12 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
       def handle_message(%{key: key, value: value} = message) do
         IO.inspect message
         IO.puts "#{key}: #{value}"
-        :ok
+        :ok # The handle_message function MUST return :ok
       end
     end
     ```
 
-    In that example `:brod_client` will be used to consume messages from the "commitlog" topic and call `MessageWorker.handle_message/1` with each message. The Kafka messages will be automatically acknowledged when the `MessageWorker.handle_message/1` function returns `:ok`.
+    In that example Kaffe will consume messages from the "commitlog" topic and call `MessageWorker.handle_message/1` with each message. The Kafka messages will be automatically acknowledged when the `MessageWorker.handle_message/1` function returns `:ok`.
 
 #### async message acknowledgement
 
@@ -101,19 +98,18 @@ If you need asynchronous message consumption:
   2. Set `async` to true when you start the Kaffe.Consumer
 
     ```elixir
-    client = :brod_client
-    topics = ["commitlog"]
     consumer_group = "demo-commitlog-consumer"
+    topic = "commitlog"
     message_handler = MessageProcessor
     async = true
 
-    worker(Kaffe.Consumer, [client, consumer_group, topics, message_handler, async])
+    worker(Kaffe.Consumer, [consumer_group, topics, message_handler, async])
 
     # … in your message handler module
 
     def handle_message(pid, message) do
       spawn_message_processing_worker(pid, message)
-      :ok
+      :ok # MUST return :ok
     end
 
     # … somewhere in your system when the worker is finished processing
@@ -129,14 +125,13 @@ It's possible that your topic and system are entirely ok with losing some messag
 
 ### Producer
 
-`Kaffe.Producer` is also a supervised process that will handle automatically selecting the partition to produce to.
+`Kaffe.Producer` is expected to be a supervised process. It handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message.
 
   1. Add `Kaffe.Producer` as a worker in your supervision tree.
 
   Required arguments:
 
-  - `client` - a running brod client configured to produce
-  - `topics` or `topic` - a list of topics or a single topic string
+  - `topics` or `topic` - a list of topics or a single topic
 
   Optional:
 
@@ -149,10 +144,10 @@ It's possible that your topic and system are entirely ok with losing some messag
 
     ```elixir
     # prepare for producing to the whitelist topic using round robin partitioning
-    Kaffe.Producer.start_link(:brod_client_1, "whitelist")
+    Kaffe.Producer.start_link("whitelist")
 
     # prepare for producing to the whitelist topic using random partitioning
-    Kaffe.Producer.start_link(:brod_client_1, "whitelist", :random)
+    Kaffe.Producer.start_link("whitelist", :random)
 
     # prepare for producing to the whitelist topic using a local function
     # assuming KafkaMeta.choose_partition/5 is locally defined
@@ -163,33 +158,29 @@ It's possible that your topic and system are entirely ok with losing some messag
       end
     end
 
-    Kaffe.Producer.start_link(:brod_client_1, "whitelist", &KafkaMeta.choose_partition/5)
+    Kaffe.Producer.start_link("whitelist", &KafkaMeta.choose_partition/5)
     ```
 
 #### Configuration Examples
 
 ```elixir
-client = :brod_client_1
 topics = ["output1", "output2"]
-worker(Kaffe.Producer, [client, topics])
+worker(Kaffe.Producer, [topics])
 ```
 
 ```elixir
-client = :brod_client_1
 topic = "whitelist"
-worker(Kaffe.Producer, [client, topic])
+worker(Kaffe.Producer, [topic])
 ```
 
 ```elixir
-client = :brod_client_1
 topic = "whitelist"
-worker(Kaffe.Producer, [client, topic, :random])
+worker(Kaffe.Producer, [topic, :random])
 ```
 
 ```elixir
-client = :brod_client_1
 topic = "whitelist"
-worker(Kaffe.Producer, [client, topic, &Producer.choose_partition/5])
+worker(Kaffe.Producer, [topic, &Producer.choose_partition/5])
 ```
 
 #### Usage Examples
@@ -198,7 +189,7 @@ Currently only synchronous message production is supported.
 
 There are three ways to produce:
 
-- `key`/`value` - The key/value will be produced to the first topic given to the producer when it was started. The partition will automatically be selected with the chosen strategy.
+- `key`/`value` - The key/value will be produced to the first topic given to the producer when it was started. The partition will be selected with the chosen strategy or given function.
     ```elixir
     Kaffe.Producer.produce_sync("key", "value")
     ```

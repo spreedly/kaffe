@@ -1,8 +1,6 @@
 defmodule Kaffe.Producer do
   @moduledoc """
   A GenServer for producing messages to a given Kafka topic.
-
-  On startup Kaffe.Producer is given a brod client and a list of topics.
   """
 
   @name :kaffe_producer
@@ -29,11 +27,14 @@ defmodule Kaffe.Producer do
   @doc """
   Start a Kafka producer
 
-  - `client` - a running brod client to use for producing
-  - `topics` or `topic` - either a list of topics or a single topic to prep for
-    producing
-  - (optional) `strategy` - the strategy to use when selecting the next
-    partition. Default `:round_robin`.
+  ## Required arguments
+
+  - `topics` - either a list of topics or a single topic to prep for producing
+
+  ## Optional
+
+  - `strategy` - the strategy to use when selecting the next partition. Default
+    `:round_robin`.
     - `:round_robin` - Cycle through the available partitions
     - `:random` - Select a random partition
     - function - Pass a function as an argument that accepts five arguments and
@@ -45,21 +46,35 @@ defmodule Kaffe.Producer do
   partition selection strategy to select the partition per message.
 
   Clients can also specify a partition directly when producing.
+
+  ## Examples
+
+  ```
+  # Produce to commitlog using round robin partitioning
+  Kaffe.Producer.start_link("commitlog")
+
+  # Produce to commitlog using random partitioning
+  Kaffe.Producer.start_link("commitlog", :random)
+
+  # Produce to commitlog using a function to determine partitions per message
+  Kaffe.Producer.start_link("commitlog", &Message.determine_partition/5)
+  ```
   """
-  def start_link(client, topics, strategy \\ :round_robin)
-  def start_link(client, topics, strategy) when is_list(topics) do
-    GenServer.start_link(__MODULE__, [client, topics, strategy], name: @name)
+  def start_link(topics, strategy \\ :round_robin)
+
+  def start_link(topics, strategy) when is_list(topics) do
+    GenServer.start_link(__MODULE__, [:brod_kaffe_producer, topics, strategy], name: @name)
   end
-  def start_link(client, topic, strategy) do
-    GenServer.start_link(__MODULE__, [client, [topic], strategy], name: @name)
+
+  def start_link(topic, strategy) do
+    start_link([topic], strategy)
   end
 
   @doc """
   Synchronously produce the given `key`/`value` to the first Kafka topic.
 
   This is a simpler way to produce if you've only given Producer a single topic
-  for production and don't want to specify the topic whenever you call to
-  produce.
+  for production and don't want to specify the topic for each call to produce.
   """
   def produce_sync(key, value) do
     GenServer.call(@name, {:produce_sync, key, value})
@@ -84,6 +99,8 @@ defmodule Kaffe.Producer do
   ## -------------------------------------------------------------------------
 
   def init([client, topics, strategy]) do
+    kafka_endpoints = Application.get_env(:kaffe, :kafka_producer_endpoints)
+    Kaffe.start_brod_producer(kafka_endpoints, :brod_kaffe_producer)
     state = %Kaffe.Producer.State{
       client: client,
       topics: topics,
