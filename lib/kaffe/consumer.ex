@@ -39,24 +39,21 @@ defmodule Kaffe.Consumer do
   @doc """
   Start a Kafka consumer
 
-  ## Required arguments:
+  The consumer pulls in values from the Kaffe consumer configuration:
 
+    - `heroku_kafka_env` - endpoints and SSL configuration will be pulled from ENV
+    - `endpoints` - plaintext Kafka endpoints
     - `consumer_group` - the consumer group id (should be unique to your app)
-    - `topics` - either a list of Kafka topics or a single topic
+    - `topics` - a list of Kafka topics to consume
     - `message_handler` - the module that will be called for each Kafka message
+    - `async_message_ack` - if false Kafka offset will automatically acknowledge
+      after successful message parsing
+    - `start_with_earliest_message` - If true the worker will consume from the
+      beginning of the topic when it first starts. This only affects consumer
+      behavior before the consumer group starts recording its offsets in Kafka.
 
-  ## Optional:
-
-    - `async` - if false Kafka offsets will be automatically acknowledged (default: false)
-
-  ## Example
-
-  ```
-  Kaffe.Consumer.start_link("consumer_group", "commitlog", MessageWorker)
-  ```
-
-  Note: If `async` is true then you'll need to call `ack/2` to acknowledge
-  Kafka messages as processed.
+  Note: If `async_message_ack` is true then you'll need to call `ack/2` to
+  acknowledge Kafka messages as processed.
 
   Only use async processing if absolutely needed by your application's
   processing flow. With automatic (sync) acknowledgement then the message flow
@@ -64,18 +61,15 @@ defmodule Kaffe.Consumer do
   acknowledgement you will be able to process messages faster but will need to
   take on the burden of ensuring no messages are lost.
   """
-  def start_link(consumer_group, topics, message_handler, async \\ false)
-
-  def start_link(consumer_group, topics, message_handler, async) when is_list(topics) do
-    group_config = [offset_commit_policy: :commit_to_kafka_v2, offset_commit_interval_seconds: 5]
-    consumer_config = [begin_offset: :earliest]
-    init_args = [message_handler, async]
-    @kafka.start_link_group_subscriber(
-      :brod_kaffe_consumer, consumer_group, topics, group_config, consumer_config, __MODULE__, init_args)
-  end
-
-  def start_link(consumer_group, topic, message_handler, async) do
-    start_link(consumer_group, [topic], message_handler, async)
+  def start_link do
+    config = Kaffe.Config.Consumer.configuration
+    @kafka.start_link_group_subscriber(config.subscriber_name,
+                                       config.consumer_group,
+                                       config.topics,
+                                       config.group_config,
+                                       config.consumer_config,
+                                       __MODULE__,
+                                       [config])
   end
 
   @doc """
@@ -100,10 +94,9 @@ defmodule Kaffe.Consumer do
   @doc """
   Initialize the consumer loop.
   """
-  def init(_consumer_group, [message_handler, async]) do
-    kafka_endpoints = Application.get_env(:kaffe, :kafka_consumer_endpoints)
-    Kaffe.start_brod_consumer(kafka_endpoints, :brod_kaffe_consumer)
-    {:ok, %Kaffe.Consumer.State{message_handler: message_handler, async: async}}
+  def init(_consumer_group, [config]) do
+    Kaffe.start_consumer_client(config)
+    {:ok, %Kaffe.Consumer.State{message_handler: config.message_handler, async: config.async_message_ack}}
   end
 
   @doc """

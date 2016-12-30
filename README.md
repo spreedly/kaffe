@@ -20,62 +20,15 @@ An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka cl
     end
     ```
 
-  3. Configure Kaffe with your Kafka endpoints
+  3. Configure a Kaffe Consumer and/or Producer
 
-    Each endpoint is `hostname: port`
-
-    ```elixir
-    config :kaffe,
-      kafka_consumer_endpoints: [kafka: 9092],
-      kafka_producer_endpoints: [kafka: 9092]
-    ```
-
-    If you only need to consume or produce then you only need to configure those respective endpoints.
-
-## Usage
-
-Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
-
-### Consumer
-
-`Kaffe.Consumer` is expected to be a supervised process that consumes messages from a Kafka topic or list of topics.
+## Kaffe Consumer Usage
 
   1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
-    ```elixir
-    %{
-      attributes: 0,
-      crc: 1914336469,
-      key: "",
-      magic_byte: 0,
-      offset: 41,
-      partition: 0,
-      topic: "sdball",
-      value: "awesome24\n"
-    }
-    ```
+    The module's `handle_message/1` function _must_ return `:ok` or Kaffe will throw an error. In normal (synchronous consumer) operation the Kaffe consumer will block until your `handle_message/1` function returns `:ok`.
 
-  2. Add `Kaffe.Consumer` as a worker in your supervision tree
-
-    Required arguments:
-
-    - `consumer_group` - the consumer group id (should be unique to your app)
-    - `topics` - the list of Kafka topics or a single topic to consume
-    - `message_handler` - the module that will be called for each Kafka message
-
-    Optional:
-
-    - `async` - if false then Kafka messages are automatically acknowledged after handling is complete (default: `false`)
-
-    Example:
-
-    ```elixir
-    consumer_group = "demo-commitlog-consumer"
-    topic = "commitlog"
-    message_handler = MessageProcessor
-
-    worker(Kaffe.Consumer, [consumer_group, topic, message_handler])
-    ```
+    ### Example
 
     ```elixir
     defmodule MessageProcessor
@@ -87,9 +40,67 @@ Kaffe provides two modules: `Kaffe.Consumer` and `Kaffe.Producer`.
     end
     ```
 
-    In that example Kaffe will consume messages from the "commitlog" topic and call `MessageWorker.handle_message/1` with each message. The Kafka messages will be automatically acknowledged when the `MessageWorker.handle_message/1` function returns `:ok`.
+    ### Message Structure
 
-#### async message acknowledgement
+    ```elixir
+    %{
+      attributes: 0,
+      crc: 1914336469,
+      key: "kafka message key",
+      magic_byte: 0,
+      offset: 41,
+      partition: 17,
+      topic: "some-kafka-topic",
+      value: "the actual kafka message value is here"
+    }
+    ```
+
+  2. Configure your Kaffe Consumer in your mix config
+
+    ```elixir
+    config :kaffe,
+      consumer: [
+        endpoints: [kafka: 9092], # that's [hostname: kafka_port]
+        topics: ["interesting-topic"], # the topic(s) that will be consumed
+        consumer_group: "your-app-consumer-group", # the consumer group for tracking offsets in Kafka
+        message_handler: MessageProcessor, # the module from Step 1 that will process messages
+
+        # optional
+        async_message_ack: false, # see "async message acknowledgement" below
+        start_with_earliest_message: true # default false
+      ],
+    ```
+
+    The `start_with_earliest_message` field controls where your consumer group starts when it starts for the very first time. Once offsets have been committed to Kafka then they will supercede this option. If omitted then your consumer group will start processing from the most recent messages in the topic instead of consuming all available messages.
+
+    ### Heroku Configuration
+
+    To configure a Kaffe Consumer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
+
+    ```elixir
+    config :kaffe,
+      consumer: [
+        heroku_kafka_env: true,
+        topics: ["interesting-topic"],
+        consumer_group: "your-app-consumer-group",
+        message_handler: MessageProcessor
+      ]
+    ```
+
+    With that setting in place Kaffe will automatically pull required info from the following ENV variables:
+
+    - `KAFKA_URL`
+    - `KAFKA_CLIENT_CERT`
+    - `KAFKA_CLIENT_CERT_KEY`
+    - `KAFKA_TRUSTED_CERT`
+
+  3. Add `Kaffe.Consumer` as a worker in your supervision tree
+
+    ```elixir
+    worker(Kaffe.Consumer, [])
+    ```
+
+### async message acknowledgement
 
 If you need asynchronous message consumption:
 
@@ -123,71 +134,62 @@ Kafka only tracks a single numeric offset, not individual messages. If a message
 
 It's possible that your topic and system are entirely ok with losing some messages (i.e. frequent metrics that aren't individually important).
 
-### Producer
+## Kaffe Producer Usage
 
-`Kaffe.Producer` is expected to be a supervised process. It handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message.
+`Kaffe.Producer` handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message.
 
-  1. Add `Kaffe.Producer` as a worker in your supervision tree.
-
-  Required arguments:
-
-  - `topics` or `topic` - a list of topics or a single topic
-
-  Optional:
-
-  - `strategy` - a partition selection strategy (default: `:round_robin`)
-    - `:round_robin` - cycle through each partition
-    - `:random` - select a random partition
-    - function - a given function to call to determine the correct partition
-
-  Examples
+1. Configure your Kaffe Producer in your mix config
 
     ```elixir
-    # prepare for producing to the whitelist topic using round robin partitioning
-    Kaffe.Producer.start_link("whitelist")
+    config :kaffe,
+      producer: [
+        endpoints: [kafka: 9092], # [hostname: port]
+        topics: ["kafka-topic"],
 
-    # prepare for producing to the whitelist topic using random partitioning
-    Kaffe.Producer.start_link("whitelist", :random)
-
-    # prepare for producing to the whitelist topic using a local function
-    # assuming KafkaMeta.choose_partition/5 is locally defined
-
-    defmodule KafkaMeta do
-      def choose_partition(topic, current_partition, partitions_count, key, value) do
-        # some calculation to return an integer between 0 and partitions_count-1
-      end
-    end
-
-    Kaffe.Producer.start_link("whitelist", &KafkaMeta.choose_partition/5)
+        # optional
+        partition_strategy: :round_robin
+      ]
     ```
 
-#### Configuration Examples
+    The `partition_strategy` setting can be one of:
 
-```elixir
-topics = ["output1", "output2"]
-worker(Kaffe.Producer, [topics])
-```
+    - `:round_robin`: (default) cycle through each partition starting from 0 at application start
+    - `:random`: select a random partition for each message
+    - function: a given function to call to determine the correct partition
 
-```elixir
-topic = "whitelist"
-worker(Kaffe.Producer, [topic])
-```
+    ### Heroku Configuration
 
-```elixir
-topic = "whitelist"
-worker(Kaffe.Producer, [topic, :random])
-```
+    To configure a Kaffe Producer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
 
-```elixir
-topic = "whitelist"
-worker(Kaffe.Producer, [topic, &Producer.choose_partition/5])
-```
+    ```elixir
+    config :kaffe,
+      producer: [
+        heroku_kafka_env: true,
+        topics: ["kafka-topic"],
 
-#### Usage Examples
+        # optional
+        partition_strategy: :round_robin
+      ]
+    ```
+
+    With that setting in place Kaffe will automatically pull required info from the following ENV variables:
+
+    - `KAFKA_URL`
+    - `KAFKA_CLIENT_CERT`
+    - `KAFKA_CLIENT_CERT_KEY`
+    - `KAFKA_TRUSTED_CERT`
+
+2. Add `Kaffe.Producer` as a worker in your supervision tree.
+
+    ```elixir
+    worker(Kaffe.Producer, [])
+    ```
+
+### Producing to Kafka
 
 Currently only synchronous message production is supported.
 
-There are three ways to produce:
+Once the `Kaffe.Producer` has started there are three ways to produce:
 
 - `key`/`value` - The key/value will be produced to the first topic given to the producer when it was started. The partition will be selected with the chosen strategy or given function.
     ```elixir

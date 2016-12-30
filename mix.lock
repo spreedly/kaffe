@@ -1,4 +1,4 @@
-%{"brod": {:git, "https://github.com/klarna/brod.git", "c24eb2b496841904a2dac3bfc5413a6bd635fd94", [tag: "master"]},
-  "kafka_protocol": {:git, "https://github.com/klarna/kafka_protocol.git", "e36ef3acd1ddbe2fd6112bfcdd9d761f549b75f1", [tag: "0.7.3"]},
-  "snappyer": {:git, "https://github.com/zmstone/snappyer", "1fc7d22e553e8d6510e331b4139641e616ef799f", [tag: "1.1.3-1.0.4"]},
-  "supervisor3": {:git, "https://github.com/klarna/supervisor3", "7ad32c5d96706118bd963247545087eacbdd2152", [tag: "1.1.3"]}}
+%{"brod": {:hex, :brod, "2.2.10", "94e0fc9efb0c42fd9780d30b78fec3710e480cc7a613f60a18c907b78e42f6f1", [:make, :rebar, :rebar3], [{:kafka_protocol, "0.7.8", [hex: :kafka_protocol, optional: false]}, {:supervisor3, "1.1.5", [hex: :supervisor3, optional: false]}]},
+  "kafka_protocol": {:hex, :kafka_protocol, "0.7.8", "3ec22040ba72714cd2156cd7d5466267b3ba4f287cf326fab8a3a6af70f63978", [:make, :rebar, :rebar3], [{:snappyer, "1.1.3-1.0.5", [hex: :snappyer, optional: false]}]},
+  "snappyer": {:hex, :snappyer, "1.1.3-1.0.5", "a02e343245212cb52749ee2392444084ccbe41eb7bbdd6e99235399197683670", [:make, :rebar, :rebar3], []},
+  "supervisor3": {:hex, :supervisor3, "1.1.5", "5f3c487a6eba23de0e64c06e93efa0eca06f40324a6412c1318c77aca6da8424", [:make, :rebar, :rebar3], []}}
