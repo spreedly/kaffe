@@ -3,7 +3,7 @@ defmodule Kaffe.Mixfile do
 
   def project do
     [app: :kaffe,
-     version: "0.2.0",
+     version: "0.3.0",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -31,6 +31,6 @@ defmodule Kaffe.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:brod, github: "klarna/brod", tag: "master"}]
+    [{:brod, "~> 2.2"}]
   end
 end

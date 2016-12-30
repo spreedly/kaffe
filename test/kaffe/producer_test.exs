@@ -7,8 +7,10 @@ defmodule Kaffe.ProducerTest do
 
   setup do
     %{
-      client: :client,
-      strategy: :round_robin,
+      client_name: :client,
+      endpoints: [kafka_test: 9092],
+      producer_config: Kaffe.Config.Producer.default_client_producer_config,
+      partition_strategy: :round_robin,
       topics: ["topic", "topic2"],
       producer_state: %Kaffe.Producer.State{
         client: :client,
@@ -23,7 +25,7 @@ defmodule Kaffe.ProducerTest do
   end
 
   test "on initialization Producer determines the number of partitions for each topic", c do
-    assert {:ok, %{partition_details: details}} = Producer.init([c.client, c.topics, c.strategy])
+    assert {:ok, %{partition_details: details}} = Producer.init([c])
     c.topics
     |> Enum.each(fn(topic) ->
       assert %{partition: nil, total: @test_partition_count} == details[String.to_atom(topic)]

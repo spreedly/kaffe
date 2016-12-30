@@ -27,19 +27,18 @@ defmodule Kaffe.Producer do
   @doc """
   Start a Kafka producer
 
-  ## Required arguments
+  The producer pulls in values from the Kaffe producer configuration:
 
-  - `topics` - either a list of topics or a single topic to prep for producing
-
-  ## Optional
-
-  - `strategy` - the strategy to use when selecting the next partition. Default
-    `:round_robin`.
-    - `:round_robin` - Cycle through the available partitions
-    - `:random` - Select a random partition
-    - function - Pass a function as an argument that accepts five arguments and
-      returns the partition number to use for the message
-        - `topic, current_partition, partitions_count, key, value`
+    - `heroku_kafka_env` - endpoints and SSL configuration will be pulled from ENV
+    - `endpoints` - plaintext Kafka endpoints
+    - `topics` - a list of Kafka topics to prep for producing
+    - `partition_strategy` - the strategy to use when selecting the next partition.
+      Default `:round_robin`.
+      - `:round_robin` - Cycle through the available partitions
+      - `:random` - Select a random partition
+      - function - Pass a function as an argument that accepts five arguments and
+        returns the partition number to use for the message
+          - `topic, current_partition, partitions_count, key, value`
 
   On initialization the producer will analyze the given topic(s) and determine
   their available partitions. That analysis will be paired with the given
@@ -47,34 +46,18 @@ defmodule Kaffe.Producer do
 
   Clients can also specify a partition directly when producing.
 
-  ## Examples
-
-  ```
-  # Produce to commitlog using round robin partitioning
-  Kaffe.Producer.start_link("commitlog")
-
-  # Produce to commitlog using random partitioning
-  Kaffe.Producer.start_link("commitlog", :random)
-
-  # Produce to commitlog using a function to determine partitions per message
-  Kaffe.Producer.start_link("commitlog", &Message.determine_partition/5)
-  ```
+  Currently only synchronous production is supported.
   """
-  def start_link(topics, strategy \\ :round_robin)
-
-  def start_link(topics, strategy) when is_list(topics) do
-    GenServer.start_link(__MODULE__, [:brod_kaffe_producer, topics, strategy], name: @name)
-  end
-
-  def start_link(topic, strategy) do
-    start_link([topic], strategy)
+  def start_link do
+    config = Kaffe.Config.Producer.configuration
+    GenServer.start_link(__MODULE__, [config], name: @name)
   end
 
   @doc """
   Synchronously produce the given `key`/`value` to the first Kafka topic.
 
   This is a simpler way to produce if you've only given Producer a single topic
-  for production and don't want to specify the topic for each call to produce.
+  for production and don't want to specify the topic for each call.
   """
   def produce_sync(key, value) do
     GenServer.call(@name, {:produce_sync, key, value})
@@ -98,14 +81,13 @@ defmodule Kaffe.Producer do
   ## GenServer callbacks
   ## -------------------------------------------------------------------------
 
-  def init([client, topics, strategy]) do
-    kafka_endpoints = Application.get_env(:kaffe, :kafka_producer_endpoints)
-    Kaffe.start_brod_producer(kafka_endpoints, :brod_kaffe_producer)
+  def init([config]) do
+    Kaffe.start_producer_client(config)
     state = %Kaffe.Producer.State{
-      client: client,
-      topics: topics,
-      partition_details: analyze(client, topics),
-      partition_strategy: strategy}
+      client: config.client_name,
+      topics: config.topics,
+      partition_details: analyze(config.client_name, config.topics),
+      partition_strategy: config.partition_strategy}
     {:ok, state}
   end
 
