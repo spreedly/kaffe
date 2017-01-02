@@ -9,4 +9,21 @@ defmodule Kaffe.ConfigTest do
       assert Kaffe.Config.heroku_kafka_endpoints(kafka_url) == expected
     end
   end
+
+  describe "ssl_config/2" do
+    test "ssl_config returns an empty list when cert and key are nil" do
+      assert Kaffe.Config.ssl_config(nil, nil) == []
+    end
+
+    test "ssl_config returns Erlang SSL module config with cert and key" do
+      client_cert = "not really a cert"
+      client_cert_key = "not really a cert key"
+      assert Kaffe.Config.ssl_config(client_cert, client_cert_key) == [
+        ssl: [
+          cert: client_cert,
+          key: client_cert_key,
+        ]
+      ]
+    end
+  end
 end
