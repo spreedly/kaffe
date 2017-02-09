@@ -14,7 +14,7 @@ defmodule Kaffe.Config.ProducerTest do
         ],
         topics: ["kaffe-test"],
         client_name: :kaffe_producer_client,
-        partition_strategy: :round_robin,
+        partition_strategy: :md5,
       }
 
       assert Kaffe.Config.Producer.configuration == expected

@@ -153,7 +153,8 @@ It's possible that your topic and system are entirely ok with losing some messag
 
     The `partition_strategy` setting can be one of:
 
-    - `:round_robin`: (default) cycle through each partition starting from 0 at application start
+    - `:md5`: (default) provides even and deterministic distrbution of the messages over the available partitions based on an MD5 hash of the key
+    - `:round_robin`: cycle through each partition starting from 0 at application start
     - `:random`: select a random partition for each message
     - function: a given function to call to determine the correct partition
 

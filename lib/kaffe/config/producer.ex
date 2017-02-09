@@ -5,7 +5,7 @@ defmodule Kaffe.Config.Producer do
       producer_config: client_producer_config,
       client_name: config_get(:client_name, :kaffe_producer_client),
       topics: producer_topics,
-      partition_strategy: config_get(:partition_strategy, :round_robin),
+      partition_strategy: config_get(:partition_strategy, :md5),
     }
   end
 

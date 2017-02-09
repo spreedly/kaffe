@@ -33,7 +33,8 @@ defmodule Kaffe.Producer do
     - `endpoints` - plaintext Kafka endpoints
     - `topics` - a list of Kafka topics to prep for producing
     - `partition_strategy` - the strategy to use when selecting the next partition.
-      Default `:round_robin`.
+      Default `:md5`.
+      - `:md5`: provides even and deterministic distrbution of the messages over the available partitions based on an MD5 hash of the key
       - `:round_robin` - Cycle through the available partitions
       - `:random` - Select a random partition
       - function - Pass a function as an argument that accepts five arguments and
@@ -143,6 +144,10 @@ defmodule Kaffe.Producer do
 
   defp choose_partition(_topic, _current_partition, partitions_count, _key, _value, :random) do
     Kaffe.PartitionSelector.random(partitions_count)
+  end
+
+  defp choose_partition(_topic, _current_partition, partitions_count, key, _value, :md5) do
+    Kaffe.PartitionSelector.md5(key, partitions_count)
   end
 
   defp choose_partition(topic, current_partition, partitions_count, key, value, fun) when is_function(fun) do

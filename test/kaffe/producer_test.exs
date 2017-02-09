@@ -76,22 +76,46 @@ defmodule Kaffe.ProducerTest do
       state = %{state | partition_strategy: :random}
 
       {:reply, :ok, new_state} = Producer.handle_call(
-        {:produce_sync, "topic", "key", "value"}, self, state)
-      assert_receive [:produce_sync, "topic", random_partition, "key", "value"]
+        {:produce_sync, "topic2", "key", "value"}, self, state)
+      assert_receive [:produce_sync, "topic2", random_partition, "key", "value"]
 
       assert (0 <= random_partition) && (random_partition <= 19)
 
       {:reply, :ok, new_state} = Producer.handle_call(
-        {:produce_sync, "topic", "key", "value"}, self, new_state)
-      assert_receive [:produce_sync, "topic", random_partition, "key", "value"]
+        {:produce_sync, "topic2", "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic2", random_partition, "key", "value"]
 
       assert (0 <= random_partition) && (random_partition <= 19)
 
       {:reply, :ok, _new_state} = Producer.handle_call(
-        {:produce_sync, "topic", "key", "value"}, self, new_state)
-      assert_receive [:produce_sync, "topic", random_partition, "key", "value"]
+        {:produce_sync, "topic2", "key", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic2", random_partition, "key", "value"]
 
       assert (0 <= random_partition) && (random_partition <= 19)
+    end
+
+    test "md5 partition strategy", c do
+      state = c.producer_state
+      state = %{state | partition_strategy: :md5}
+
+      {:reply, :ok, new_state} = Producer.handle_call(
+        {:produce_sync, "topic2", "key1", "value"}, self, state)
+      assert_receive [:produce_sync, "topic2", partition1, "key1", "value"]
+
+      assert (0 <= partition1) && (partition1 <= 19),
+        "The partition should be in the range"
+
+      {:reply, :ok, new_state} = Producer.handle_call(
+        {:produce_sync, "topic2", "key1", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic2", ^partition1, "key1", "value"],
+        "Should receive the same partition for the same key"
+
+      {:reply, :ok, _new_state} = Producer.handle_call(
+        {:produce_sync, "topic2", "key2", "value"}, self, new_state)
+      assert_receive [:produce_sync, "topic2", partition2, "key2", "value"]
+
+      assert partition1 != partition2,
+        "Partitions should vary"
     end
 
     test "given function partition strategy", c do

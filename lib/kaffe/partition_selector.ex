@@ -27,4 +27,11 @@ defmodule Kaffe.PartitionSelector do
   def random(total) do
     :crypto.rand_uniform(0, total)
   end
+
+  def md5(key, total) do
+    :crypto.hash(:md5, key)
+    |> :binary.bin_to_list
+    |> Enum.sum
+    |> rem(total)
+  end
 end
