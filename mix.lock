@@ -1,4 +1,4 @@
-%{"brod": {:hex, :brod, "2.2.10", "94e0fc9efb0c42fd9780d30b78fec3710e480cc7a613f60a18c907b78e42f6f1", [:make, :rebar, :rebar3], [{:kafka_protocol, "0.7.8", [hex: :kafka_protocol, optional: false]}, {:supervisor3, "1.1.5", [hex: :supervisor3, optional: false]}]},
-  "kafka_protocol": {:hex, :kafka_protocol, "0.7.8", "3ec22040ba72714cd2156cd7d5466267b3ba4f287cf326fab8a3a6af70f63978", [:make, :rebar, :rebar3], [{:snappyer, "1.1.3-1.0.5", [hex: :snappyer, optional: false]}]},
-  "snappyer": {:hex, :snappyer, "1.1.3-1.0.5", "a02e343245212cb52749ee2392444084ccbe41eb7bbdd6e99235399197683670", [:make, :rebar, :rebar3], []},
+%{"brod": {:hex, :brod, "2.3.1", "c80036a92fff8a6be1182293c2cf353fa13e7deb11747d09fe0ae3fcd8d10f54", [:make, :rebar, :rebar3], [{:kafka_protocol, "0.9.1", [hex: :kafka_protocol, optional: false]}, {:supervisor3, "1.1.5", [hex: :supervisor3, optional: false]}]},
+  "kafka_protocol": {:hex, :kafka_protocol, "0.9.1", "8e943f26590a1ae034422fb8305f64a1aa21ff6dea4fb51e36b702c410861205", [:make, :rebar, :rebar3], [{:snappyer, "1.2.0", [hex: :snappyer, optional: false]}]},
+  "snappyer": {:hex, :snappyer, "1.2.0", "4761f475c53fec4a027dc90ea0626a735e3d276bfcfaf9a8dc4c7bbda4d1e058", [:make, :rebar, :rebar3], []},
   "supervisor3": {:hex, :supervisor3, "1.1.5", "5f3c487a6eba23de0e64c06e93efa0eca06f40324a6412c1318c77aca6da8424", [:make, :rebar, :rebar3], []}}
