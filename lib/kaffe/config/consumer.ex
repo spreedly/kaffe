@@ -9,6 +9,8 @@ defmodule Kaffe.Config.Consumer do
       consumer_config: client_consumer_config,
       message_handler: message_handler,
       async_message_ack: async_message_ack,
+      rebalance_delay_ms: rebalance_delay_ms,
+      max_bytes: max_bytes
     }
   end
 
@@ -32,6 +34,14 @@ defmodule Kaffe.Config.Consumer do
       offset_commit_policy: :commit_to_kafka_v2,
       offset_commit_interval_seconds: config_get(:offset_commit_interval_seconds, 5),
     ]
+  end
+
+  def rebalance_delay_ms do
+   config_get(:rebalance_delay_ms, 10_000)
+  end
+
+  def max_bytes do
+   config_get(:max_bytes, 1_000_000)
   end
 
   def client_consumer_config do

@@ -26,6 +26,18 @@ An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka cl
 
 ## Kaffe Consumer Usage
 
+Kaffe has two primary modes of message consumption.
+
+Single message consumers process one message at a time using the `:brod_group_subscriber` behavior. This supports consumers in a consumer group in a single node (e.g., Heroku dyno). For such consumers, this is the place to start as it's the simplest mode of operation.
+
+Batch message consumers receive a list of messages and work as part of the `:brod_group_member` behavior. This has a few important benefits:
+
+1. Group members assign a "subscriber" to each partition in the topic. Because Kafka topics scale with partitions, having a worker per partition usually increases throughput.
+2. Group members correctly handle partition assignments across multiple clients in a consumer group. This means that this mode of operation will scale horizontally (e.g., multiple dynos on Heroku).
+3. Downstream processing that benefits from batching (like writing to another Kafka topic) is more easily supported.
+
+### Kaffe Consumer - Single Message Consumer
+
 1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
     The module's `handle_message/1` function _must_ return `:ok` or Kaffe will throw an error. In normal (synchronous consumer) operation the Kaffe consumer will block until your `handle_message/1` function returns `:ok`.
@@ -101,6 +113,37 @@ An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka cl
       ```elixir
       worker(Kaffe.Consumer, [])
       ```
+
+### Kaffe GroupMember - Batch Message Consumer
+
+  1. There are two modes for using the batch consumer. The first enable an easy migration path from using the `Kaffe.Consumer`. The second is more batch oriented, which allows consumers to handle a group of messages for efficiency or greater context.
+  
+     `handle_message/1` This is the same as for `Kaffe.Consumer`
+
+     `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
+
+     The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
+
+  2. The configuration options for the GroupMember consumer are a superset of those for `Kaffe.Consumer`. The additional options are:
+
+     `:rebalance_delay_ms` which is the time to allow for rebalancing
+     among workers. The default is 10,000, which should give the
+     consumers time to rebalance when scaling.
+
+     `:max_bytes` limits the number of message bytes received from Kafka
+     for a particular topic subscriber. The default is 1MB. This
+     parameter might need tuning depending on the number of partitions
+     in the topics being read (there is one subscriber per topic per
+     partition). For example, if you are reading from two topics, each
+     with 32 partitions, there is the potential of 64MB in buffered
+     messages at any one time.
+
+  3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your
+     supervision tree
+
+    ```elixir
+    supervisor(Kaffe.GroupMemberSupervisor, [])
+    ```
 
 ### async message acknowledgement
 
@@ -214,3 +257,27 @@ Once the `Kaffe.Producer` has started there are three ways to produce:
 
     **NOTE**: With this approach Kaffe will not calculate the next partition since it assumes you're taking over that job by giving it a specific partition.
 
+
+## Testing
+
+### Setup
+
+In order to run the end to end tests, a Kafka topic is required. It must:
+
+* be named `kaffe-test`
+* have 32 partitions
+
+If using the `kafka-topics.sh` script that comes with the Kafka distribution, you may use something like:
+
+```bash
+kafka-topics.sh --zookeeper localhost:2181 --create --partitions 32 --replication-factor 1 --topic kaffe-test
+```
+
+### Running
+
+```bash
+# unit tests
+mix test
+# end to end test
+mix test --only e2e
+```

@@ -4,7 +4,7 @@ defmodule Kaffe.Config.ProducerTest do
   describe "configuration/0" do
     test "correct settings are extracted" do
       expected = %{
-        endpoints: [kafka_test: 9092],
+        endpoints: [kafka: 9092],
         producer_config: [
           auto_start_producers: true,
           allow_topic_auto_creation: false,

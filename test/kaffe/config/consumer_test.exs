@@ -4,7 +4,7 @@ defmodule Kaffe.Config.ConsumerTest do
   describe "configuration/0" do
     test "correct settings are extracted" do
       expected = %{
-        endpoints: [kafka_test: 9092],
+        endpoints: [kafka: 9092],
         subscriber_name: :"kaffe-test-group",
         consumer_group: "kaffe-test-group",
         topics: ["kaffe-test"],
@@ -19,6 +19,8 @@ defmodule Kaffe.Config.ConsumerTest do
         ],
         message_handler: SilentMessage,
         async_message_ack: false,
+        rebalance_delay_ms: 1_000,
+        max_bytes: 10_000
       }
 
       assert Kaffe.Config.Consumer.configuration == expected

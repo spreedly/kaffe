@@ -8,7 +8,7 @@ defmodule Kaffe.ProducerTest do
   setup do
     %{
       client_name: :client,
-      endpoints: [kafka_test: 9092],
+      endpoints: [kafka: 9092],
       producer_config: Kaffe.Config.Producer.default_client_producer_config,
       partition_strategy: :round_robin,
       topics: ["topic", "topic2"],
