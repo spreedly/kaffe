@@ -20,7 +20,9 @@ defmodule Kaffe.Config.ConsumerTest do
         message_handler: SilentMessage,
         async_message_ack: false,
         rebalance_delay_ms: 1_000,
-        max_bytes: 10_000
+        max_bytes: 10_000,
+        subscriber_retries: 1,
+        subscriber_retry_delay_ms: 5,
       }
 
       assert Kaffe.Config.Consumer.configuration == expected
