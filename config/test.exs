@@ -13,7 +13,9 @@ config :kaffe,
     offset_commit_interval_seconds: 10,
     start_with_earliest_message: true,
     rebalance_delay_ms: 1_000,
-    max_bytes: 10_000
+    max_bytes: 10_000,
+    subscriber_retries: 1,
+    subscriber_retry_delay_ms: 5,
   ],
   producer: [
     endpoints: [kafka: 9092],
