@@ -7,22 +7,23 @@ defmodule Kaffe.WorkerSupervisor do
 
   require Logger
 
-  def start_link do
-    Supervisor.start_link(__MODULE__, :ok)
+  def start_link(subscriber_name) do
+    Supervisor.start_link(__MODULE__, subscriber_name, name: name(subscriber_name))
   end
 
-  def start_worker_manager(pid) do
-    Supervisor.start_child(pid, worker(Kaffe.WorkerManager, []))
+  def start_worker_manager(pid, subscriber_name) do
+    Supervisor.start_child(pid, worker(Kaffe.WorkerManager, [subscriber_name]))
   end
 
-  def start_worker(pid, message_handler, partition) do
+  def start_worker(pid, message_handler, subscriber_name, partition) do
     Logger.debug "Starting worker for partition: #{partition}"
     Supervisor.start_child(pid,
-      worker(Kaffe.Worker, [message_handler, partition], id: partition))
+      worker(Kaffe.Worker, [message_handler, subscriber_name, partition],
+        id: :"worker_#{subscriber_name}_#{partition}"))
   end
 
-  def init(:ok) do
-    Logger.info "event#startup=#{inspect self()}"
+  def init(subscriber_name) do
+    Logger.info "event#startup=#{__MODULE__} subscriber_name=#{subscriber_name}"
 
     children = [
     ]
@@ -32,4 +33,9 @@ defmodule Kaffe.WorkerSupervisor do
     # to cascade all the way up so that they are terminated.
     supervise(children, strategy: :one_for_all, max_restarts: 0, max_seconds: 1)
   end
+
+  defp name(subscriber_name) do
+    :"worker_supervisor_#{subscriber_name}"
+  end
+
 end

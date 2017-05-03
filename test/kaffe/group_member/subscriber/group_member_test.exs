@@ -1,53 +1,108 @@
 defmodule Kaffe.GroupMemberTest do
-  @moduledoc """
-  First setup a topic like the one in `script/test-setup.sh`
-  """
 
   use ExUnit.Case
-  
-  @moduletag :e2e
 
-  defmodule TestSubscriber do
-    def subscribe(_subscriber_name, group_coordinator_pid, _worker_pid, _gen_id, topic, partition, _ops) do
-      send :test_case, {:subscribe, group_coordinator_pid, topic, partition}
+  alias Kaffe.GroupMember
+
+  defmodule TestKafka do
+    def start_consumer(_subscriber_name, _topic, _ops) do
+      send :test_case, {:start_consumer}
+      :ok
+    end
+  end
+
+  defmodule TestGroupCoordinator do
+    def start_link(_subscriber_name, _consumer_group, _topics, _group_config, _module, _pid) do
+      send :test_case, {:group_coordinator_start_link}
       {:ok, self()}
     end
   end
 
+  defmodule TestWorkerManager do
+    def worker_for(_pid, _partition) do
+      send :test_case, {:worker_for}
+      {:ok, self()}
+    end
+  end
+
+  defmodule TestSubscriber do
+    def subscribe(_subscriber_name, _group_coordinator_pid, _worker_pid, _gen_id, _topic, _partition, _ops) do
+      send :test_case, {:subscriber, {:subscribe}}
+      {:ok, self()}
+    end
+    def stop(_subscriber_pid) do
+      send :test_case, {:subscriber, {:stop}}
+    end
+  end
+
   setup do
-    Application.put_env(:kaffe, :kafka_mod, :brod)
+    Application.put_env(:kaffe, :kafka_mod, TestKafka)
+    Application.put_env(:kaffe, :group_coordinator_mod, TestGroupCoordinator)
+    Application.put_env(:kaffe, :worker_manager_mod, TestWorkerManager)
     Application.put_env(:kaffe, :subscriber_mod, TestSubscriber)
   end
 
+  test "handle assignments_received" do
 
-  # Start two consumers and verify that they receive different partition assignments
-  test "startup" do
     Process.register(self(), :test_case)
-    {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link()
-    {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link()
+    
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group",
+      self(), "topic", :earliest)
 
-    :timer.sleep 11_000
+    GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
 
-    assignments = Enum.reduce(0..31, %{}, fn partition, map ->
-      receive do
-        {:subscribe, group_coordinator_pid, _topic, ^partition} ->
-          {_get, res} = Map.get_and_update(map, group_coordinator_pid, fn
-            nil ->
-              {nil, [partition]}
-            list ->
-              {list, [partition | list]}
-          end)
-          res
-      end
-    end)
+    :timer.sleep Kaffe.Config.Consumer.configuration.rebalance_delay_ms
 
-    [list1, list2] = Map.values(assignments)
+    assert_receive {:start_consumer}
+    assert_receive {:group_coordinator_start_link}
+    assert_receive {:worker_for}
+    assert_receive {:subscriber, {:subscribe}}
+  end
 
-    assert Enum.to_list(0..31) |> Enum.sort == Enum.sort(list1 ++ list2)
-    assert length(list1) == length(list2)
-    assert list1 == list1 -- list2
-    assert list2 == list2 -- list1
+  test "handle assignments_revoked" do
 
+    Process.register(self(), :test_case)
+    
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group",
+      self(), "topic", :earliest)
+
+    GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
+
+    :timer.sleep Kaffe.Config.Consumer.configuration.rebalance_delay_ms
+
+    GroupMember.assignments_revoked(pid)
+
+    :timer.sleep 100
+
+    assert_receive {:start_consumer}
+    assert_receive {:group_coordinator_start_link}
+    assert_receive {:worker_for}
+    assert_receive {:subscriber, {:subscribe}}
+    assert_receive {:subscriber, {:stop}}
+  end
+
+  test "handle assignments_received without assignments_revoked" do
+
+    Process.register(self(), :test_case)
+    
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group",
+      self(), "topic", :earliest)
+
+    GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
+
+    :timer.sleep Kaffe.Config.Consumer.configuration.rebalance_delay_ms
+
+    GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 1, 1}])
+
+    :timer.sleep 100
+
+    assert_receive {:start_consumer}
+    assert_receive {:group_coordinator_start_link}
+    assert_receive {:worker_for}
+    assert_receive {:subscriber, {:subscribe}}
+    assert_receive {:subscriber, {:stop}}
+    assert_receive {:worker_for}
+    assert_receive {:subscriber, {:subscribe}}
   end
 
 end

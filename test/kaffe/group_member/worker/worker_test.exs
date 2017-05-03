@@ -13,7 +13,7 @@ defmodule Kaffe.WorkerTest do
 
   test "use list handler" do
     Process.register(self(), :test_case)
-    {:ok, worker_pid} = Worker.start_link(TestHandler, 0)
+    {:ok, worker_pid} = Worker.start_link(TestHandler, "subscriber_name", 0)
     Worker.process_messages(worker_pid, [%{message: :one}, %{message: :two}])
 
     :timer.sleep 100

@@ -24,13 +24,13 @@ defmodule Kaffe.GroupManager do
   end
 
   def start_link() do
-    GenServer.start_link(__MODULE__, [self()])  
+    GenServer.start_link(__MODULE__, [self()], name: name())
   end
 
   ## Callbacks
 
   def init([supervisor_pid]) do
-    Logger.info "event#startup=#{inspect self()}"
+    Logger.info "event#startup=#{__MODULE__} name=#{name()}"
 
     config = Kaffe.Config.Consumer.configuration
 
@@ -49,8 +49,10 @@ defmodule Kaffe.GroupManager do
 
     Logger.debug "Starting worker supervisors for group manager: #{inspect self()}"
     
-    {:ok, worker_supervisor_pid} = GroupMemberSupervisor.start_worker_supervisor(state.supervisor_pid)
-    {:ok, worker_manager_pid} = WorkerSupervisor.start_worker_manager(worker_supervisor_pid)
+    {:ok, worker_supervisor_pid} = GroupMemberSupervisor.start_worker_supervisor(
+      state.supervisor_pid, state.subscriber_name)
+    {:ok, worker_manager_pid} = WorkerSupervisor.start_worker_manager(
+      worker_supervisor_pid, state.subscriber_name)
 
     Enum.each(state.topics, fn(topic) ->
       Logger.debug "Starting group member for topic: #{topic}"
@@ -62,11 +64,20 @@ defmodule Kaffe.GroupManager do
         topic,
         state.offset)
     end)
+
     {:noreply, state}
   end
 
   defp kafka do
     Application.get_env(:kaffe, :kafka_mod, :brod)
+  end
+
+  defp name do
+    :"group_manager_#{subscriber_name()}"
+  end
+
+  defp subscriber_name do
+    Kaffe.Config.Consumer.configuration.subscriber_name
   end
 
 end
