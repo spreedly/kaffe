@@ -22,8 +22,6 @@ defmodule Kaffe.GroupMember do
 
   @behaviour :brod_group_member
 
-  alias Kaffe.WorkerManager
-
   require Logger
 
   defmodule State do
@@ -39,7 +37,7 @@ defmodule Kaffe.GroupMember do
 
   def start_link(subscriber_name, consumer_group, worker_manager_pid, topic, configured_offset) do
     GenServer.start_link(__MODULE__, [subscriber_name, consumer_group,
-      worker_manager_pid, topic, configured_offset])
+      worker_manager_pid, topic, configured_offset], name: name(subscriber_name, topic))
   end
 
   def init([subscriber_name, consumer_group, worker_manager_pid, topic, configured_offset]) do
@@ -48,7 +46,7 @@ defmodule Kaffe.GroupMember do
     {:ok, pid} = group_coordinator().start_link(subscriber_name, consumer_group,
       [topic], _group_config = [], __MODULE__, self())
 
-    Logger.info "event#init group_coordinator=#{inspect pid} subscriber_name=#{subscriber_name} consumer_group=#{consumer_group}"
+    Logger.info "event#init=#{__MODULE__} group_coordinator=#{inspect pid} subscriber_name=#{subscriber_name} consumer_group=#{consumer_group}"
 
     {:ok, %State{subscriber_name: subscriber_name,
                 group_coordinator_pid: pid,
@@ -60,12 +58,12 @@ defmodule Kaffe.GroupMember do
 
   def get_committed_offsets(_group_member_pid, _topic_partitions) do
     # Should not receive this
-    Logger.warn "status#get_committed_offsets"
+    Logger.warn "event#get_committed_offsets"
   end
 
   def assign_partitions(_pid, _members, _topic_partitions) do
     # Should not receive this
-    Logger.warn "status#assign_partitions"
+    Logger.warn "event#assign_partitions"
   end
 
   def assignments_received(pid, _member_id, generation_id, assignments) do
@@ -80,24 +78,20 @@ defmodule Kaffe.GroupMember do
   # subscribers to give each consumer a chance to handle the latest generation of the
   # configuration.
   def handle_cast({:assignments_received, gen_id, assignments}, state) do
-    Logger.info "event#assignments_received=#{gen_id}"
+    Logger.info "event#assignments_received=#{name(state.subscriber_name, state.topic)} generation_id=#{gen_id}"
     Process.send_after(self(), {:allocate_subscribers, gen_id, assignments}, rebalance_delay())
     {:noreply, %{state | current_gen_id: gen_id}}
   end
   def handle_cast({:assignments_revoked}, state) do
-    Logger.info "event#assignments_revoked"
-    Enum.each(state.subscribers, fn (s) ->
-      Logger.debug "Stopping subscriber: #{inspect s}"
-      Kaffe.Subscriber.stop(s)
-    end)
-
+    Logger.info "event#assignments_revoked=#{name(state.subscriber_name, state.topic)}"
+    stop_subscribers(state.subscribers)
     {:noreply, %{state | :subscribers => []}}
   end
 
   # If we're not at the latest generation, discard the assignment for whatever is next.
   def handle_info({:allocate_subscribers, gen_id, _assignments}, %{current_gen_id: current_gen_id} = state)
       when gen_id < current_gen_id do
-    Logger.info "Discarding old generation #{gen_id} for current generation: #{current_gen_id}"
+    Logger.debug "Discarding old generation #{gen_id} for current generation: #{current_gen_id}"
     {:noreply, state}
   end
   # If we are at the latest, allocate a subscriber per partition.
@@ -105,11 +99,18 @@ defmodule Kaffe.GroupMember do
 
     Logger.info "event#allocate_subscribers=#{inspect self()} generation_id=#{gen_id}"
 
+    if state.subscribers != [] do
+      # Did we try to allocate without deallocating? We'd like to know.
+      Logger.info "event#subscribers_not_empty=#{inspect self()}"
+      stop_subscribers(state.subscribers)
+    end
+
     subscribers = Enum.map(assignments, fn (assignment) ->
 
+      Logger.debug "Allocating subscriber for assignment: #{inspect assignment}"
       {:brod_received_assignment, topic, partition, offset} = assignment
 
-      worker_pid = WorkerManager.worker_for(state.worker_manager_pid, partition)
+      worker_pid = worker_manager().worker_for(state.worker_manager_pid, partition)
 
       {:ok, pid} = subscriber().subscribe(
         state.subscriber_name,
@@ -126,6 +127,12 @@ defmodule Kaffe.GroupMember do
     {:noreply, %{state | :subscribers => subscribers}}
   end
 
+  defp stop_subscribers(subscribers) do
+    Enum.each(subscribers, fn (s) ->
+      subscriber().stop(s)
+    end)
+  end
+
   defp compute_offset(:undefined, configured_offset) do
     [begin_offset: configured_offset]
   end
@@ -137,16 +144,24 @@ defmodule Kaffe.GroupMember do
     Kaffe.Config.Consumer.configuration.rebalance_delay_ms
   end
 
-  defp group_coordinator do
-    Application.get_env(:kaffe, :group_coordinator_mod, :brod_group_coordinator)
-  end
-
   defp kafka do
     Application.get_env(:kaffe, :kafka_mod, :brod)
   end
 
+  defp group_coordinator do
+    Application.get_env(:kaffe, :group_coordinator_mod, :brod_group_coordinator)
+  end
+
+  defp worker_manager do
+    Application.get_env(:kaffe, :worker_manager_mod, Kaffe.WorkerManager)
+  end
+
   defp subscriber do
     Application.get_env(:kaffe, :subscriber_mod, Kaffe.Subscriber)
+  end
+
+  defp name(subscriber_name, topic) do
+    :"group_member_#{subscriber_name}_#{topic}"
   end
 
 end

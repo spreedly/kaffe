@@ -32,11 +32,11 @@ defmodule Kaffe.Subscriber do
   def subscribe(subscriber_name, group_coordinator_pid, worker_pid,
       gen_id, topic, partition, ops) do
     GenServer.start_link(__MODULE__, [subscriber_name, group_coordinator_pid, worker_pid,
-        gen_id, topic, partition, ops])
+        gen_id, topic, partition, ops], name: name(subscriber_name, topic, partition))
   end
 
   def stop(subscriber_pid) do
-    Logger.debug "event#stopping=#{inspect self()}"
+    Logger.info "event#stopping=#{inspect self()}"
     GenServer.stop(subscriber_pid)
   end
 
@@ -64,6 +64,7 @@ defmodule Kaffe.Subscriber do
     end)
 
     offset = Enum.reduce(messages, 0, &max(&1.offset, &2))
+    Logger.debug "Computed offset to ack of #{state.topic}, #{state.partition} at offset: #{offset}"
 
     Logger.debug "Sending message set to worker: #{inspect state.worker_pid}"
     Worker.process_messages(state.worker_pid, messages)
@@ -84,6 +85,8 @@ defmodule Kaffe.Subscriber do
   end
 
   def handle_cast({:ack_messages}, state) do
+
+    Logger.debug "Ready to ack messages of #{state.topic}, #{state.partition} at offset: #{state.ack_offset}"
 
     # Update the offsets in the group
     :ok = group_coordinator().ack(state.group_coordinator_pid, state.gen_id,
@@ -135,6 +138,10 @@ defmodule Kaffe.Subscriber do
 
   defp retry_delay do
     Kaffe.Config.Consumer.configuration.subscriber_retry_delay_ms
+  end
+
+  defp name(subscriber_name, topic, partition) do
+    :"subscriber_#{subscriber_name}_#{topic}_#{partition}"
   end
 
 end

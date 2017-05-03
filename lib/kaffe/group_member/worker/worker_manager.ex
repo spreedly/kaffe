@@ -14,8 +14,8 @@ defmodule Kaffe.WorkerManager do
 
   require Logger
 
-  def start_link do
-    GenServer.start_link(__MODULE__, [self()])  
+  def start_link(subscriber_name) do
+    GenServer.start_link(__MODULE__, [self(), subscriber_name], name: name(subscriber_name))
   end
 
   def worker_for(pid, partition) do
@@ -24,12 +24,12 @@ defmodule Kaffe.WorkerManager do
 
   ## Callbacks
 
-  def init([supervisor_pid]) do
-    Logger.info "event#starting=#{inspect self()} for supervisor=#{inspect supervisor_pid}"
+  def init([supervisor_pid, subscriber_name]) do
+    Logger.info "event#starting=#{__MODULE__} subscriber_name=#{subscriber_name} supervisor=#{inspect supervisor_pid}"
 
     worker_table = :ets.new(:workers, [:set, :protected])
 
-    {:ok, %{supervisor_pid: supervisor_pid, worker_table: worker_table}}
+    {:ok, %{supervisor_pid: supervisor_pid, subscriber_name: subscriber_name, worker_table: worker_table}}
   end
   
   def handle_call({:worker_for, partition}, _from, state) do
@@ -46,10 +46,11 @@ defmodule Kaffe.WorkerManager do
     end
   end
 
-  defp start_worker(partition, %{supervisor_pid: supervisor_pid} = state) do
+  defp start_worker(partition, state) do
     config = Kaffe.Config.Consumer.configuration
     Logger.debug "Creating worker for partition: #{partition}"
-    WorkerSupervisor.start_worker(supervisor_pid, config.message_handler, partition)
+    WorkerSupervisor.start_worker(state.supervisor_pid, config.message_handler,
+      state.subscriber_name, partition)
     |> capture_worker(partition, state)
   end
 
@@ -57,6 +58,10 @@ defmodule Kaffe.WorkerManager do
     Logger.debug "Captured new worker: #{inspect pid} for partition: #{partition}"
     true = :ets.insert(worker_table, {partition, pid})
     pid
+  end
+
+  defp name(subscriber_name) do
+    :"worker_manager_#{subscriber_name}"
   end
 
 end

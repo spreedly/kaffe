@@ -15,12 +15,12 @@ defmodule Kaffe.Worker do
 
   require Logger
 
-  def start_link(message_handler, partition) do
-    GenServer.start_link(__MODULE__, [message_handler, partition], name: :"partition_worker_#{partition}")
+  def start_link(message_handler, subscriber_name, partition) do
+    GenServer.start_link(__MODULE__, [message_handler, partition], name: name(subscriber_name, partition))
   end
 
   def init([message_handler, partition]) do
-    Logger.info "event#starting=#{inspect self()} source=#{__MODULE__}"
+    Logger.info "event#starting=#{__MODULE__} partition=#{partition}"
     {:ok, %{message_handler: message_handler,
             partition: partition}}
   end
@@ -40,6 +40,10 @@ defmodule Kaffe.Worker do
 
   def terminate(reason, _state) do
     Logger.info "event#terminate=#{inspect self()} reason=#{inspect reason}"
+  end
+
+  defp name(subscriber_name, partition) do
+    :"partition_worker_#{subscriber_name}_#{partition}"
   end
 
 end

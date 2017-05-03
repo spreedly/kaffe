@@ -2,7 +2,7 @@ defmodule Kaffe.Config.Consumer do
   def configuration do
     %{
       endpoints: endpoints,
-      subscriber_name: consumer_group |> String.to_atom,
+      subscriber_name: subscriber_name,
       consumer_group: consumer_group,
       topics: topics,
       group_config: consumer_group_config,
@@ -17,6 +17,8 @@ defmodule Kaffe.Config.Consumer do
   end
 
   def consumer_group, do: config_get!(:consumer_group)
+
+  def subscriber_name, do: config_get(:subscriber_name, consumer_group) |> String.to_atom
 
   def topics, do: config_get!(:topics)
 
