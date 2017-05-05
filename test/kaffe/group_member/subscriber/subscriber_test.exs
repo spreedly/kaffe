@@ -25,8 +25,44 @@ defmodule Kaffe.SubscriberTest do
     end
   end
 
+  defmodule TestWorker do
+    def process_messages(_pid, _messages) do
+      send :test_case, {:process_messages}
+    end
+  end
+
   setup do
     Application.put_env(:kaffe, :kafka_mod, TestKafka)
+    Application.put_env(:kaffe, :worker_mod, TestWorker)
+  end
+
+  test "handle message set" do
+    
+    Process.register(self(), :test_case)
+    {:ok, kafka_pid} = TestKafka.start_link(0)
+
+    {:ok, pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [])
+    send(pid, {self(), build_message_set()})
+
+    assert_receive {:subscribe, {:ok, ^kafka_pid}}
+    assert_receive {:process_messages}
+  end
+
+  test "handle kafka_fetch_error" do
+    
+    Process.register(self(), :test_case)
+    {:ok, kafka_pid} = TestKafka.start_link(0)
+
+    {:ok, pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [])
+    Process.unlink(pid)
+    Process.monitor(pid)
+    send(pid, {self(), {:kafka_fetch_error, "topic", 1,
+      :NotLeaderForPartition, "This server is not the leader for that topic-partition."}})
+
+    assert_receive {:subscribe, {:ok, ^kafka_pid}}
+    refute_receive {:process_messages}
+    assert_receive {:DOWN, _ref, :process, ^pid,
+      {:kafka_fetch_error, "topic", 1, :NotLeaderForPartition, _reason}}
   end
 
   test "handle recovered subscribe failure" do
@@ -58,5 +94,15 @@ defmodule Kaffe.SubscriberTest do
     assert_received {:subscribe, {:error, :no_available_offsets}}
     assert_received {:subscribe, {:error, :no_available_offsets}}
     assert_received {:EXIT, ^subscriber_pid, _reason}
+  end
+
+  defp build_message_set do
+    {:kafka_message_set, "topic", 0, 1, build_message_list()}
+  end
+
+  defp build_message_list do
+    Enum.map(1..10, fn (n) ->
+      {:kafka_message, n, 0, 0, "key-#{n}", "#{n}", -1}
+    end)
   end
 end

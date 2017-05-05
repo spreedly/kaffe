@@ -14,8 +14,6 @@ defmodule Kaffe.Subscriber do
 
   use GenServer
 
-  alias Kaffe.Worker
-
   require Logger
 
   require Record
@@ -32,7 +30,7 @@ defmodule Kaffe.Subscriber do
   def subscribe(subscriber_name, group_coordinator_pid, worker_pid,
       gen_id, topic, partition, ops) do
     GenServer.start_link(__MODULE__, [subscriber_name, group_coordinator_pid, worker_pid,
-        gen_id, topic, partition, ops], name: name(subscriber_name, topic, partition))
+      gen_id, topic, partition, ops], name: name(subscriber_name, topic, partition))
   end
 
   def stop(subscriber_pid) do
@@ -53,7 +51,7 @@ defmodule Kaffe.Subscriber do
             ack_offset: nil, retries_remaining: max_retries()}}
   end
 
-  def handle_info({_pid, message_set}, state) do
+  def handle_info({_pid, {:kafka_message_set, _topic, _partition, _high_wm_offset, _messages} = message_set}, state) do
 
     messages = message_set
     |> kafka_message_set
@@ -67,7 +65,7 @@ defmodule Kaffe.Subscriber do
     Logger.debug "Computed offset to ack of #{state.topic}, #{state.partition} at offset: #{offset}"
 
     Logger.debug "Sending message set to worker: #{inspect state.worker_pid}"
-    Worker.process_messages(state.worker_pid, messages)
+    worker().process_messages(state.worker_pid, messages)
 
     {:noreply, %{state | ack_offset: offset}}
   end
@@ -79,7 +77,11 @@ defmodule Kaffe.Subscriber do
     kafka().subscribe(subscriber_name, self(), topic, partition, ops)
     |> handle_subscribe(state)
   end
-  def handle_info({'DOWN', _ref, _process, _pid, reason}, state) do
+  def handle_info({_pid, {:kafka_fetch_error, topic, partition, code, reason} = error}, state) do
+    Logger.info "event#kafka_fetch_error=#{inspect self()} topic=#{topic} partition=#{partition} code=#{inspect code} reason=#{inspect reason}"
+    {:stop, error, state}
+  end
+  def handle_info({:DOWN, _ref, _process, _pid, reason}, state) do
     Logger.warn "event#consumer_down=#{inspect self()} reason=#{inspect reason}"
     {:stop, :consumer_down, state}
   end
@@ -126,6 +128,10 @@ defmodule Kaffe.Subscriber do
 
   defp group_coordinator do
     Application.get_env(:kaffe, :group_coordinator_mod, :brod_group_coordinator)
+  end
+
+  defp worker do
+    Application.get_env(:kaffe, :worker_mod, Kaffe.Worker)
   end
 
   defp subscriber_ops do

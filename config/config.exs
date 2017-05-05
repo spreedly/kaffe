@@ -4,8 +4,9 @@ config :kaffe,
   kafka_mod: :brod,
   group_subscriber_mod: :brod_group_subscriber,
   group_coordinator_mod: :brod_group_coordinator,
+  subscriber_mod: Kaffe.Subscriber,
   worker_manager_mod: Kaffe.WorkerManager,
-  subscriber_mod: Kaffe.Subscriber
+  worker_mod: Kaffe.Worker
 
 # config :logger, :console,
 #   level: :debug,
