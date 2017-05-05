@@ -16,9 +16,9 @@ defmodule Kaffe.GroupMemberSupervisor do
   end
 
   def start_group_member(supervisor_pid, subscriber_name, consumer_group,
-      worker_manager_pid, topic, configured_offset) do
+      worker_manager_pid, topic) do
     Supervisor.start_child(supervisor_pid, worker(Kaffe.GroupMember,
-      [subscriber_name, consumer_group, worker_manager_pid, topic, configured_offset],
+      [subscriber_name, consumer_group, worker_manager_pid, topic],
       id: :"group_member_#{subscriber_name}_#{topic}"))
   end
 

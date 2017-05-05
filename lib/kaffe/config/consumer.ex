@@ -13,6 +13,7 @@ defmodule Kaffe.Config.Consumer do
       max_bytes: max_bytes,
       subscriber_retries: subscriber_retries(),
       subscriber_retry_delay_ms: subscriber_retry_delay_ms(),
+      offset_reset_policy: offset_reset_policy(),
     }
   end
 
@@ -74,6 +75,10 @@ defmodule Kaffe.Config.Consumer do
       true -> :earliest
       false -> -1
     end
+  end
+
+  def offset_reset_policy do
+    config_get(:offset_reset_policy, :reset_by_subscriber)
   end
 
   def maybe_heroku_kafka_ssl do

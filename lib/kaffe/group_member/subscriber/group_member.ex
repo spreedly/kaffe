@@ -35,12 +35,12 @@ defmodule Kaffe.GroupMember do
       current_gen_id: nil
   end
 
-  def start_link(subscriber_name, consumer_group, worker_manager_pid, topic, configured_offset) do
+  def start_link(subscriber_name, consumer_group, worker_manager_pid, topic) do
     GenServer.start_link(__MODULE__, [subscriber_name, consumer_group,
-      worker_manager_pid, topic, configured_offset], name: name(subscriber_name, topic))
+      worker_manager_pid, topic], name: name(subscriber_name, topic))
   end
 
-  def init([subscriber_name, consumer_group, worker_manager_pid, topic, configured_offset]) do
+  def init([subscriber_name, consumer_group, worker_manager_pid, topic]) do
 
     :ok = kafka().start_consumer(subscriber_name, topic, [])
     {:ok, pid} = group_coordinator().start_link(subscriber_name, consumer_group,
@@ -52,8 +52,7 @@ defmodule Kaffe.GroupMember do
                 group_coordinator_pid: pid,
                 consumer_group: consumer_group,
                 worker_manager_pid: worker_manager_pid,
-                topic: topic,
-                configured_offset: configured_offset}}
+                topic: topic}}
   end
 
   def get_committed_offsets(_group_member_pid, _topic_partitions) do
@@ -119,7 +118,7 @@ defmodule Kaffe.GroupMember do
         gen_id,
         topic,
         partition,
-        compute_offset(offset, state.configured_offset))
+        compute_offset(offset, configured_offset()))
 
       pid
     end)
@@ -138,6 +137,10 @@ defmodule Kaffe.GroupMember do
   end
   defp compute_offset(offset, _configured_offset) do
     [begin_offset: offset]
+  end
+
+  defp configured_offset do
+    Kaffe.Config.Consumer.begin_offset
   end
 
   defp rebalance_delay do

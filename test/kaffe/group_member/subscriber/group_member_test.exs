@@ -46,8 +46,7 @@ defmodule Kaffe.GroupMemberTest do
 
     Process.register(self(), :test_case)
     
-    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group",
-      self(), "topic", :earliest)
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic")
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
 
@@ -63,8 +62,7 @@ defmodule Kaffe.GroupMemberTest do
 
     Process.register(self(), :test_case)
     
-    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group",
-      self(), "topic", :earliest)
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic")
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
 
@@ -83,8 +81,7 @@ defmodule Kaffe.GroupMemberTest do
 
     Process.register(self(), :test_case)
     
-    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group",
-      self(), "topic", :earliest)
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic")
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
 

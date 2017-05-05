@@ -39,8 +39,7 @@ defmodule Kaffe.GroupManager do
     {:ok, %State{supervisor_pid: supervisor_pid,
                 subscriber_name: config.subscriber_name,
                 consumer_group: config.consumer_group,
-                topics: config.topics,
-                offset: Kaffe.Config.Consumer.begin_offset}}
+                topics: config.topics}}
   end
 
   def handle_cast({:start_group_members}, state) do
@@ -59,8 +58,7 @@ defmodule Kaffe.GroupManager do
         state.subscriber_name,
         state.consumer_group,
         worker_manager_pid,
-        topic,
-        state.offset)
+        topic)
     end)
 
     {:noreply, state}

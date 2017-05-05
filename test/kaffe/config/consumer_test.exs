@@ -1,7 +1,15 @@
 defmodule Kaffe.Config.ConsumerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   describe "configuration/0" do
+
+    setup do
+      consumer_config = Application.get_env(:kaffe, :consumer)
+      |> Keyword.delete(:offset_reset_policy)
+      |> Keyword.put(:start_with_earliest_message, true)
+      Application.put_env(:kaffe, :consumer, consumer_config)
+    end
+
     test "correct settings are extracted" do
       expected = %{
         endpoints: [kafka: 9092],
@@ -23,9 +31,22 @@ defmodule Kaffe.Config.ConsumerTest do
         max_bytes: 10_000,
         subscriber_retries: 1,
         subscriber_retry_delay_ms: 5,
+        offset_reset_policy: :reset_by_subscriber
       }
 
       assert Kaffe.Config.Consumer.configuration == expected
     end
+  end
+
+  describe "offset_reset_policy" do
+
+    test "computes correctly from start_with_earliest_message == true" do
+      consumer_config = Application.get_env(:kaffe, :consumer)
+      |> Keyword.delete(:offset_reset_policy)
+      Application.put_env(:kaffe, :consumer, consumer_config)
+
+      assert Kaffe.Config.Consumer.configuration.offset_reset_policy == :reset_by_subscriber
+    end
+
   end
 end

@@ -4,12 +4,20 @@ defmodule Kaffe.Subscriber do
   
   Assignments are received from a group consumer member, `Kaffe.GroupMember`.
 
-  Messages are delegated to `Kaffe.Worker`.
+  Messages are delegated to `Kaffe.Worker`. The worker is expected to cast back
+  a response, at which time the stored offset will be acked back to Kafka.
 
-  The result from the worker is expected to be `:ok` and anything else
-  will be an error.
+  The options (`ops`) to `subscribe/7` may include the beginning offset
+  using `:begin_offset`.
+
+  The subscriber reads the following options out of the configuration:
+
+      - `max_bytes` - The maximum number of message bytes to receive in a batch
+      - `offset_reset_policy` - The native `auto.offset.reset` option,
+          either `:reset_to_earliest` or `:reset_to_latest`.
 
   See: https://github.com/klarna/brucke/blob/master/src/brucke_member.erl
+  Also: https://github.com/klarna/brod/blob/master/src/brod_consumer.erl
   """
 
   use GenServer
@@ -140,7 +148,8 @@ defmodule Kaffe.Subscriber do
   end
 
   defp subscriber_ops do
-    [max_bytes: Kaffe.Config.Consumer.configuration.max_bytes]
+    [max_bytes: Kaffe.Config.Consumer.configuration.max_bytes,
+     offset_reset_policy: Kaffe.Config.Consumer.configuration.offset_reset_policy]
   end
 
   defp max_retries do

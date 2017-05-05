@@ -116,27 +116,37 @@ Batch message consumers receive a list of messages and work as part of the `:bro
 
 ### Kaffe GroupMember - Batch Message Consumer
 
-  1. There are two modes for using the batch consumer. The first enable an easy migration path from using the `Kaffe.Consumer`. The second is more batch oriented, which allows consumers to handle a group of messages for efficiency or greater context.
+1. Define a `handle_messages/1` function in the provided module.
   
-     `handle_message/1` This is the same as for `Kaffe.Consumer`
+      `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
-     `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
+      The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
 
-     The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
+2. The configuration options for the GroupMember consumer are a superset of those for `Kaffe.Consumer`. The additional options are:
 
-  2. The configuration options for the GroupMember consumer are a superset of those for `Kaffe.Consumer`. The additional options are:
+      `:rebalance_delay_ms` which is the time to allow for rebalancing
+      among workers. The default is 10,000, which should give the
+      consumers time to rebalance when scaling.
 
-     `:rebalance_delay_ms` which is the time to allow for rebalancing
-     among workers. The default is 10,000, which should give the
-     consumers time to rebalance when scaling.
+      `:max_bytes` limits the number of message bytes received from Kafka
+      for a particular topic subscriber. The default is 1MB. This
+      parameter might need tuning depending on the number of partitions
+      in the topics being read (there is one subscriber per topic per
+      partition). For example, if you are reading from two topics, each
+      with 32 partitions, there is the potential of 64MB in buffered
+      messages at any one time.
 
-     `:max_bytes` limits the number of message bytes received from Kafka
-     for a particular topic subscriber. The default is 1MB. This
-     parameter might need tuning depending on the number of partitions
-     in the topics being read (there is one subscriber per topic per
-     partition). For example, if you are reading from two topics, each
-     with 32 partitions, there is the potential of 64MB in buffered
-     messages at any one time.
+      `:offset_reset_policy` controls how the subscriber handles an
+      expired offset. See the Kafka consumer option,
+      [`auto.offset.reset`](https://kafka.apache.org/documentation/#newconsumerconfigs).
+      Valid values for this option are:
+
+      - `:reset_to_earliest` - reset to the earliest available offset
+      - `:reset_to_latest` - reset to the latest offset
+      - `:reset_by_subscriber` - The subscriber receives the `OffsetOutOfRange` error
+        
+      More information in the [Brod
+      consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
 
   3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your
      supervision tree
