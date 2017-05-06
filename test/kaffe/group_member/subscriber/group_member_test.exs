@@ -72,13 +72,11 @@ defmodule Kaffe.GroupMemberTest do
 
     GroupMember.assignments_revoked(pid)
 
-    :timer.sleep 100
-
     assert_receive {:start_consumer}
     assert_receive {:group_coordinator_start_link}
     assert_receive {:worker_for}
     assert_receive {:subscriber, {:subscribe}}
-    assert_receive {:subscriber, {:stop}}
+    assert_receive {:subscriber, {:stop}}, 300
   end
 
   test "handle assignments_received without assignments_revoked" do
@@ -94,13 +92,11 @@ defmodule Kaffe.GroupMemberTest do
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 1, 1}])
 
-    :timer.sleep 100
-
     assert_receive {:start_consumer}
     assert_receive {:group_coordinator_start_link}
     assert_receive {:worker_for}
     assert_receive {:subscriber, {:subscribe}}
-    assert_receive {:subscriber, {:stop}}
+    assert_receive {:subscriber, {:stop}}, 300
     assert_receive {:worker_for}
     assert_receive {:subscriber, {:subscribe}}
   end

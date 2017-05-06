@@ -26,7 +26,7 @@ defmodule Kaffe.SubscriberTest do
   end
 
   defmodule TestWorker do
-    def process_messages(_pid, _messages) do
+    def process_messages(_pid, _subscriber_pid, _topic, _partition, _generation_id, _messages) do
       send :test_case, {:process_messages}
     end
   end
@@ -72,10 +72,8 @@ defmodule Kaffe.SubscriberTest do
 
     Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [])
 
-    :timer.sleep 100
-
-    assert_received {:subscribe, {:error, :no_available_offsets}}
-    assert_received {:subscribe, {:ok, ^kafka_pid}}
+    assert_receive {:subscribe, {:error, :no_available_offsets}}
+    assert_receive {:subscribe, {:ok, ^kafka_pid}}
   end
 
   test "handle complete subscribe failure" do
@@ -89,11 +87,9 @@ defmodule Kaffe.SubscriberTest do
 
     {:ok, subscriber_pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [])
 
-    :timer.sleep 100
-
-    assert_received {:subscribe, {:error, :no_available_offsets}}
-    assert_received {:subscribe, {:error, :no_available_offsets}}
-    assert_received {:EXIT, ^subscriber_pid, _reason}
+    assert_receive {:subscribe, {:error, :no_available_offsets}}
+    assert_receive {:subscribe, {:error, :no_available_offsets}}
+    assert_receive {:EXIT, ^subscriber_pid, _reason}
   end
 
   defp build_message_set do

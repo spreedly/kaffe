@@ -24,7 +24,7 @@ defmodule Kaffe.Subscriber do
   defmodule State do
     defstruct subscriber_pid: nil, group_coordinator_pid: nil, gen_id: nil, worker_pid: nil,
       subscriber_name: nil, topic: nil, partition: nil, subscribe_ops: nil,
-      ack_offset: nil, retries_remaining: nil
+      retries_remaining: nil
   end
 
   def subscribe(subscriber_name, group_coordinator_pid, worker_pid,
@@ -38,8 +38,8 @@ defmodule Kaffe.Subscriber do
     GenServer.stop(subscriber_pid)
   end
 
-  def ack_messages(subscriber_pid) do
-    GenServer.cast(subscriber_pid, {:ack_messages})
+  def ack_messages(subscriber_pid, topic, partition, generation_id, offset) do
+    GenServer.cast(subscriber_pid, {:ack_messages, topic, partition, generation_id, offset})
   end
 
   def init([subscriber_name, group_coordinator_pid, worker_pid,
@@ -48,10 +48,13 @@ defmodule Kaffe.Subscriber do
     {:ok, %State{group_coordinator_pid: group_coordinator_pid,
             worker_pid: worker_pid, gen_id: gen_id,
             subscriber_name: subscriber_name, topic: topic, partition: partition, subscribe_ops: ops ++ subscriber_ops(),
-            ack_offset: nil, retries_remaining: max_retries()}}
+            retries_remaining: max_retries()}}
   end
 
-  def handle_info({_pid, {:kafka_message_set, _topic, _partition, _high_wm_offset, _messages} = message_set}, state) do
+  def handle_info({_pid, {:kafka_message_set, topic, partition, _high_wm_offset, _messages} = message_set}, state) do
+
+    ^topic = state.topic
+    ^partition = state.partition
 
     messages = message_set
     |> kafka_message_set
@@ -61,13 +64,10 @@ defmodule Kaffe.Subscriber do
       compile_message(message, state.topic, state.partition)
     end)
 
-    offset = Enum.reduce(messages, 0, &max(&1.offset, &2))
-    Logger.debug "Computed offset to ack of #{state.topic}, #{state.partition} at offset: #{offset}"
+    Logger.debug "Sending #{Enum.count(messages)} messages to worker: #{inspect state.worker_pid}"
+    worker().process_messages(state.worker_pid, self(), topic, partition, state.gen_id, messages)
 
-    Logger.debug "Sending message set to worker: #{inspect state.worker_pid}"
-    worker().process_messages(state.worker_pid, messages)
-
-    {:noreply, %{state | ack_offset: offset}}
+    {:noreply, state}
   end
   def handle_info({:subscribe_to_topic_partition},
       %{subscriber_name: subscriber_name,
@@ -86,15 +86,20 @@ defmodule Kaffe.Subscriber do
     {:stop, :consumer_down, state}
   end
 
-  def handle_cast({:ack_messages}, state) do
+  def handle_cast({:ack_messages, topic, partition, generation_id, offset}, state) do
 
-    Logger.debug "Ready to ack messages of #{state.topic}, #{state.partition} at offset: #{state.ack_offset}"
+    Logger.debug "Ready to ack messages of #{state.topic} / #{state.partition} / #{generation_id} at offset: #{offset}"
+
+    # Is this the ack we're looking for?
+    ^topic = state.topic
+    ^partition = state.partition
+    ^generation_id = state.gen_id
 
     # Update the offsets in the group
     :ok = group_coordinator().ack(state.group_coordinator_pid, state.gen_id,
-        state.topic, state.partition, state.ack_offset)
+        state.topic, state.partition, offset)
     # Request more messages from the consumer
-    :ok = kafka().consume_ack(state.subscriber_pid, state.ack_offset)
+    :ok = kafka().consume_ack(state.subscriber_pid, offset)
 
     {:noreply, state}
   end
