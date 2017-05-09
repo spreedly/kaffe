@@ -95,7 +95,7 @@ defmodule Kaffe.Consumer do
   Initialize the consumer loop.
   """
   def init(_consumer_group, [config]) do
-    Kaffe.start_consumer_client(config)
+    start_consumer_client(config)
     {:ok, %Kaffe.Consumer.State{message_handler: config.message_handler, async: config.async_message_ack}}
   end
 
@@ -139,6 +139,10 @@ defmodule Kaffe.Consumer do
   ## -------------------------------------------------------------------------
   ## internal functions
   ## -------------------------------------------------------------------------
+
+  def start_consumer_client(config) do
+    @kafka.start_client(config.endpoints, config.subscriber_name, config.consumer_config)
+  end
 
   defp compile_message(msg, topic, partition) do
     Map.merge(%{topic: topic, partition: partition}, kafka_message_to_map(msg))

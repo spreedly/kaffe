@@ -4,8 +4,6 @@ defmodule Kaffe.GroupManager do
 
   The process begins by starting the client connection to Kafka. Then, group
   members are created for each of the configured topics.
-
-  This is also the place where subscribers get the PID for a Worker.
   """
   
   use GenServer

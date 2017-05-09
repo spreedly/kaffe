@@ -6,6 +6,9 @@ defmodule Kaffe.ProducerTest do
   @test_partition_count Application.get_env(:kaffe, :test_partition_count)
 
   setup do
+    Process.register(self(), :test_case)
+    Producer.start_link
+
     %{
       client_name: :client,
       endpoints: [kafka: 9092],
@@ -47,6 +50,11 @@ defmodule Kaffe.ProducerTest do
     Producer.handle_call(
       {:produce_sync, "topic2", partition, "key", "value"}, self, c.producer_state)
     assert_receive [:produce_sync, "topic2", ^partition, "key", "value"]
+  end
+
+  test "produce_sync passes through the result" do
+    TestBrod.set_produce_response(response = {:error, {:producer_down, :noproc}})
+    assert response == Producer.produce_sync("key", "value")
   end
 
   describe "partition selection" do

@@ -59,6 +59,11 @@ defmodule Kaffe.Producer do
 
   This is a simpler way to produce if you've only given Producer a single topic
   for production and don't want to specify the topic for each call.
+
+  Returns:
+  
+       * `:ok` on successfully producing the message
+       * `{:error, reason}` for any error
   """
   def produce_sync(key, value) do
     GenServer.call(@name, {:produce_sync, key, value})
@@ -66,6 +71,8 @@ defmodule Kaffe.Producer do
 
   @doc """
   Synchronously produce the `key`/`value` to `topic`
+
+  See `produce_sync/2` for returns.
   """
   def produce_sync(topic, key, value) do
     GenServer.call(@name, {:produce_sync, topic, key, value})
@@ -73,6 +80,8 @@ defmodule Kaffe.Producer do
 
   @doc """
   Synchronously produce the given `key`/`value` to the `topic`/`partition`
+
+  See `produce_sync/2` for returns.
   """
   def produce_sync(topic, partition, key, value) do
     GenServer.call(@name, {:produce_sync, topic, partition, key, value})
@@ -83,7 +92,7 @@ defmodule Kaffe.Producer do
   ## -------------------------------------------------------------------------
 
   def init([config]) do
-    Kaffe.start_producer_client(config)
+    start_producer_client(config)
     state = %Kaffe.Producer.State{
       client: config.client_name,
       topics: config.topics,
@@ -97,37 +106,41 @@ defmodule Kaffe.Producer do
   """
   def handle_call({:produce_sync, key, value}, _from, state) do
     topic = state.topics |> List.first
-    {:ok, new_state} = produce(topic, key, value, state)
-    {:reply, :ok, new_state}
+    {response, new_state} = produce(topic, key, value, state)
+    {:reply, response, new_state}
   end
 
   @doc """
   Sync produce the `key`/`value` to the given `topic`
   """
   def handle_call({:produce_sync, topic, key, value}, _from, state) do
-    {:ok, new_state} = produce(topic, key, value, state)
-    {:reply, :ok, new_state}
+    {response, new_state} = produce(topic, key, value, state)
+    {:reply, response, new_state}
   end
 
   @doc """
   Sync produce the `key`/`value` to the given `topic` and `partition`
   """
   def handle_call({:produce_sync, topic, partition, key, value}, _from, state) do
-    @kafka.produce_sync(state.client, topic, partition, key, value)
-    {:reply, :ok, state}
+    response = @kafka.produce_sync(state.client, topic, partition, key, value)
+    {:reply, response, state}
   end
 
   ## -------------------------------------------------------------------------
   ## internal
   ## -------------------------------------------------------------------------
 
+  defp start_producer_client(config) do
+    @kafka.start_client(config.endpoints, config.client_name, config.producer_config)
+  end
+
   defp produce(topic, key, value, state) do
     topic_key = String.to_atom(topic)
     details = state.partition_details[topic_key]
     partition = choose_partition(
       topic, details.partition, details.total, key, value, state.partition_strategy)
-    :ok = @kafka.produce_sync(state.client, topic, partition, key, value)
-    {:ok, put_in(state.partition_details[topic_key].partition, partition)}
+    response = @kafka.produce_sync(state.client, topic, partition, key, value)
+    {response, put_in(state.partition_details[topic_key].partition, partition)}
   end
 
   defp analyze(client, topics) do
