@@ -10,7 +10,7 @@ An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka cl
 
       ```elixir
       def deps do
-        [{:kaffe, git: "git@github.com:spreedly/kaffe.git", branch: "master"}]
+        [{:kaffe, "~> 1.0"}]
       end
       ```
 

@@ -3,7 +3,11 @@ defmodule Kaffe.Mixfile do
 
   def project do
     [app: :kaffe,
-     version: "0.3.0",
+     version: "1.0.0",
+     description: "An opinionated Elixir wrapper around brod, the Erlang Kafka client.",
+     name: "Kaffe",
+     source_url: "https://github.com/spreedly/kaffe",
+     package: package(),
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -11,9 +15,6 @@ defmodule Kaffe.Mixfile do
      deps: deps()]
   end
 
-  # Configuration for the OTP application
-  #
-  # Type "mix help compile.app" for more information
   def application do
     [applications: [:logger, :brod]]
   end
@@ -21,16 +22,16 @@ defmodule Kaffe.Mixfile do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
-  # Dependencies can be Hex packages:
-  #
-  #   {:mydep, "~> 0.3.0"}
-  #
-  # Or git/path repositories:
-  #
-  #   {:mydep, git: "https://github.com/elixir-lang/mydep.git", tag: "0.1.0"}
-  #
-  # Type "mix help deps" for more examples and options
   defp deps do
     [{:brod, "~> 2.2"}]
+  end
+
+  defp package do
+    [
+      name: :kaffe,
+      licenses: ["MIT License"],
+      maintainers: ["Stephen Ball", "Kevin Lewis", "Ryan Daigle", "Spreedly"],
+      links: %{"GitHub" => "https://github.com/spreedly/kaffe"}
+    ]
   end
 end
