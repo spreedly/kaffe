@@ -10,7 +10,7 @@ An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka cl
 
       ```elixir
       def deps do
-        [{:kaffe, "~> 1.0"}]
+        [{:kaffe, "~> 0.5"}]
       end
       ```
 
