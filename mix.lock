@@ -1,4 +1,6 @@
 %{"brod": {:hex, :brod, "2.3.1", "c80036a92fff8a6be1182293c2cf353fa13e7deb11747d09fe0ae3fcd8d10f54", [:make, :rebar, :rebar3], [{:kafka_protocol, "0.9.1", [hex: :kafka_protocol, repo: "hexpm", optional: false]}, {:supervisor3, "1.1.5", [hex: :supervisor3, repo: "hexpm", optional: false]}], "hexpm"},
+  "earmark": {:hex, :earmark, "1.2.2", "f718159d6b65068e8daeef709ccddae5f7fdc770707d82e7d126f584cd925b74", [:mix], [], "hexpm"},
+  "ex_doc": {:hex, :ex_doc, "0.15.1", "d5f9d588fd802152516fccfdb96d6073753f77314fcfee892b15b6724ca0d596", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
   "kafka_protocol": {:hex, :kafka_protocol, "0.9.1", "8e943f26590a1ae034422fb8305f64a1aa21ff6dea4fb51e36b702c410861205", [:make, :rebar, :rebar3], [{:snappyer, "1.2.0", [hex: :snappyer, repo: "hexpm", optional: false]}], "hexpm"},
   "logfmt": {:hex, :logfmt, "3.2.0", "887a091adad28acc6e4d8b3d3bce177b934e7c61e7655c86946410f44aca6d84", [:mix], []},
   "metrix": {:git, "https://github.com/rwdaigle/metrix.git", "a6738df9346da0412ca68f82a24a67d2a32b066e", [branch: "master"]},
