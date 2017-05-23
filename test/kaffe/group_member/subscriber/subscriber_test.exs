@@ -62,7 +62,22 @@ defmodule Kaffe.SubscriberTest do
     assert_receive {:subscribe, {:ok, ^kafka_pid}}
     refute_receive {:process_messages}
     assert_receive {:DOWN, _ref, :process, ^pid,
-      {:kafka_fetch_error, "topic", 1, :NotLeaderForPartition, _reason}}
+      {:shutdown, {:kafka_fetch_error, "topic", 1, :NotLeaderForPartition, _reason}}}
+  end
+
+  test "handle consumer down" do
+    
+    Process.register(self(), :test_case)
+    {:ok, kafka_pid} = TestKafka.start_link(0)
+
+    {:ok, pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [])
+    Process.unlink(pid)
+    Process.monitor(pid)
+    send(pid, {:DOWN, make_ref(), :process, kafka_pid, :failure_message})
+
+    assert_receive {:subscribe, {:ok, ^kafka_pid}}
+    refute_receive {:process_messages}
+    assert_receive {:DOWN, _ref, :process, ^pid, {:shutdown, {:consumer_down, :failure_message}}}
   end
 
   test "handle recovered subscribe failure" do

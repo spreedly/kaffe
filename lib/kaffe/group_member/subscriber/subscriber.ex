@@ -87,11 +87,17 @@ defmodule Kaffe.Subscriber do
   end
   def handle_info({_pid, {:kafka_fetch_error, topic, partition, code, reason} = error}, state) do
     Logger.info "event#kafka_fetch_error=#{inspect self()} topic=#{topic} partition=#{partition} code=#{inspect code} reason=#{inspect reason}"
-    {:stop, error, state}
+    {:stop, {:shutdown, error}, state}
   end
-  def handle_info({:DOWN, _ref, _process, _pid, reason}, state) do
+  def handle_info({:DOWN, _ref, _process, pid, reason}, %{subscriber_pid: subscriber_pid} = state)
+      when pid == subscriber_pid do
     Logger.warn "event#consumer_down=#{inspect self()} reason=#{inspect reason}"
-    {:stop, :consumer_down, state}
+    {:stop, {:shutdown, {:consumer_down, reason}}, state}
+  end
+  def handle_info(unknown, state) do
+    # catch all
+    Logger.warn "event#unknown_message=#{inspect self()} reason=#{inspect unknown}"
+    {:noreply, state}
   end
 
   def handle_cast({:ack_messages, topic, partition, generation_id, offset}, state) do
@@ -114,6 +120,7 @@ defmodule Kaffe.Subscriber do
 
   defp handle_subscribe({:ok, subscriber_pid}, state) do
     Logger.debug "Subscribe success: #{inspect subscriber_pid}"
+    Process.monitor(subscriber_pid)
     {:noreply, %{state | subscriber_pid: subscriber_pid}}
   end
   defp handle_subscribe({:error, reason}, %{retries_remaining: retries_remaining} = state)
