@@ -3,12 +3,15 @@ defmodule TestBrod do
 
   @test_partition_count Application.get_env(:kaffe, :test_partition_count)
 
+  require Logger
+
   def start_client(_endpoints, _client_name, _producer_config) do
     GenServer.start_link(__MODULE__, :ok, name: TestBrod)
+    :ok
   end
 
   def start_link_group_subscriber(_client, _consumer_group, _topics, _group_config, _consumer_config, _handler, _init_args) do
-    GenServer.start_link(__MODULE__, :ok)
+    {:ok, Process.whereis(TestBrod)}
   end
 
   def produce_sync(_client, topic, partition, key, value) do
@@ -32,4 +35,5 @@ defmodule TestBrod do
   def handle_call({:set_produce_response, response}, _from, state) do
     {:reply, response, %{state | produce_response: response}}
   end
+
 end

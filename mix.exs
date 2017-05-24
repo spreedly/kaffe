@@ -3,7 +3,7 @@ defmodule Kaffe.Mixfile do
 
   def project do
     [app: :kaffe,
-     version: "0.5.0",
+     version: "1.0.0",
      description: "An opinionated Elixir wrapper around brod, the Erlang Kafka client, that supports encrypted connections to Heroku Kafka out of the box.",
      name: "Kaffe",
      source_url: "https://github.com/spreedly/kaffe",
@@ -16,7 +16,8 @@ defmodule Kaffe.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :brod]]
+    [applications: [:logger, :brod],
+     mod: {Kaffe, []}]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]

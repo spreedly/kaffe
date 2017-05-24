@@ -1,31 +1,5 @@
 defmodule Kaffe.Producer do
   @moduledoc """
-  A GenServer for producing messages to a given Kafka topic.
-  """
-
-  @name :kaffe_producer
-  @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
-
-  use GenServer
-
-  defmodule State do
-    @moduledoc """
-    - `client` - the brod client to call for producing
-    - `topics` - a list of configured topics
-    - `partition_strategy` - the strategy to determine the next partition
-    - `partition_details` - a map of partition details keyed by topic
-      - `total` - the number of partitions
-      - `partition` - the next partition to produce to
-    """
-    defstruct client: nil, topics: nil, partition_strategy: nil, partition_details: %{}
-  end
-
-  ## -------------------------------------------------------------------------
-  ## public api
-  ## -------------------------------------------------------------------------
-
-  @doc """
-  Start a Kafka producer
 
   The producer pulls in values from the Kaffe producer configuration:
 
@@ -35,23 +9,40 @@ defmodule Kaffe.Producer do
     - `partition_strategy` - the strategy to use when selecting the next partition.
       Default `:md5`.
       - `:md5`: provides even and deterministic distrbution of the messages over the available partitions based on an MD5 hash of the key
-      - `:round_robin` - Cycle through the available partitions
       - `:random` - Select a random partition
       - function - Pass a function as an argument that accepts five arguments and
         returns the partition number to use for the message
           - `topic, current_partition, partitions_count, key, value`
 
-  On initialization the producer will analyze the given topic(s) and determine
-  their available partitions. That analysis will be paired with the given
-  partition selection strategy to select the partition per message.
-
   Clients can also specify a partition directly when producing.
 
   Currently only synchronous production is supported.
   """
-  def start_link do
-    config = Kaffe.Config.Producer.configuration
-    GenServer.start_link(__MODULE__, [config], name: @name)
+
+  @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
+
+  require Logger
+
+  ## -------------------------------------------------------------------------
+  ## public api
+  ## -------------------------------------------------------------------------
+
+  def start_producer_client do
+    @kafka.start_client(config().endpoints, client_name(), config().producer_config)
+  end
+
+  @doc """
+  Synchronously produce the `messages` to `topic`
+
+  `messages` must be a list of `{key, value}` tuples
+
+  Returns:
+  
+       * `:ok` on successfully producing each message
+       * `{:error, reason}` for any error
+  """
+  def produce_sync(topic, message_list) when is_list(message_list) do
+    produce_list(topic, message_list)
   end
 
   @doc """
@@ -66,7 +57,8 @@ defmodule Kaffe.Producer do
        * `{:error, reason}` for any error
   """
   def produce_sync(key, value) do
-    GenServer.call(@name, {:produce_sync, key, value})
+    topic = config().topics |> List.first
+    produce(topic, key, value)
   end
 
   @doc """
@@ -75,7 +67,7 @@ defmodule Kaffe.Producer do
   See `produce_sync/2` for returns.
   """
   def produce_sync(topic, key, value) do
-    GenServer.call(@name, {:produce_sync, topic, key, value})
+    produce(topic, key, value)
   end
 
   @doc """
@@ -84,86 +76,67 @@ defmodule Kaffe.Producer do
   See `produce_sync/2` for returns.
   """
   def produce_sync(topic, partition, key, value) do
-    GenServer.call(@name, {:produce_sync, topic, partition, key, value})
-  end
-
-  ## -------------------------------------------------------------------------
-  ## GenServer callbacks
-  ## -------------------------------------------------------------------------
-
-  def init([config]) do
-    start_producer_client(config)
-    state = %Kaffe.Producer.State{
-      client: config.client_name,
-      topics: config.topics,
-      partition_details: analyze(config.client_name, config.topics),
-      partition_strategy: config.partition_strategy}
-    {:ok, state}
-  end
-
-  @doc """
-  Sync produce the `key`/`value` to the default topic
-  """
-  def handle_call({:produce_sync, key, value}, _from, state) do
-    topic = state.topics |> List.first
-    {response, new_state} = produce(topic, key, value, state)
-    {:reply, response, new_state}
-  end
-
-  @doc """
-  Sync produce the `key`/`value` to the given `topic`
-  """
-  def handle_call({:produce_sync, topic, key, value}, _from, state) do
-    {response, new_state} = produce(topic, key, value, state)
-    {:reply, response, new_state}
-  end
-
-  @doc """
-  Sync produce the `key`/`value` to the given `topic` and `partition`
-  """
-  def handle_call({:produce_sync, topic, partition, key, value}, _from, state) do
-    response = @kafka.produce_sync(state.client, topic, partition, key, value)
-    {:reply, response, state}
+    @kafka.produce_sync(client_name(), topic, partition, key, value)
   end
 
   ## -------------------------------------------------------------------------
   ## internal
   ## -------------------------------------------------------------------------
 
-  defp start_producer_client(config) do
-    @kafka.start_client(config.endpoints, config.client_name, config.producer_config)
+  defp produce_list(topic, message_list) when is_list(message_list) do
+    Logger.debug "event#produce_list topic=#{topic}"
+    message_list
+    |> group_by_partition(topic)
+    |> produce_list_to_topic(topic)
   end
 
-  defp produce(topic, key, value, state) do
-    topic_key = String.to_atom(topic)
-    details = state.partition_details[topic_key]
-    partition = choose_partition(
-      topic, details.partition, details.total, key, value, state.partition_strategy)
-    response = @kafka.produce_sync(state.client, topic, partition, key, value)
-    {response, put_in(state.partition_details[topic_key].partition, partition)}
+  defp produce(topic, key, value) do
+    {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
+    partition = choose_partition(topic, partitions_count, key, value, partition_strategy())
+    Logger.debug "event#produce topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
+    @kafka.produce_sync(client_name(), topic, partition, key, value)
   end
 
-  defp analyze(client, topics) do
-    topics
-    |> Enum.reduce(%{}, fn(topic, details) ->
-       {:ok, partition_count} = @kafka.get_partitions_count(client, topic)
-       Map.put(details, String.to_atom(topic), %{partition: nil, total: partition_count})
+  defp group_by_partition(messages, topic) do
+    {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
+    messages
+    |> Enum.group_by(fn ({key, message}) ->
+      choose_partition(topic, partitions_count, key, message, partition_strategy())
     end)
   end
 
-  defp choose_partition(_topic, current_partition, partitions_count, _key, _value, :round_robin) do
-    Kaffe.PartitionSelector.round_robin(current_partition, partitions_count)
+  defp produce_list_to_topic(message_list, topic) do
+    message_list
+    |> Enum.reduce_while(:ok, fn ({partition, messages}, :ok) ->
+      Logger.debug "event#produce_list_to_topic partition=#{partition} messages=#{inspect messages}"
+      case @kafka.produce_sync(client_name(), topic, partition, "ignored", messages) do
+        :ok -> {:cont, :ok}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
   end
 
-  defp choose_partition(_topic, _current_partition, partitions_count, _key, _value, :random) do
+  defp choose_partition(_topic, partitions_count, _key, _value, :random) do
     Kaffe.PartitionSelector.random(partitions_count)
   end
 
-  defp choose_partition(_topic, _current_partition, partitions_count, key, _value, :md5) do
+  defp choose_partition(_topic, partitions_count, key, _value, :md5) do
     Kaffe.PartitionSelector.md5(key, partitions_count)
   end
 
-  defp choose_partition(topic, current_partition, partitions_count, key, value, fun) when is_function(fun) do
-    fun.(topic, current_partition, partitions_count, key, value)
+  defp choose_partition(topic, partitions_count, key, value, fun) when is_function(fun) do
+    fun.(topic, partitions_count, key, value)
+  end
+
+  defp client_name do
+    config().client_name
+  end
+
+  defp partition_strategy do
+    config().partition_strategy
+  end
+
+  defp config do
+    Kaffe.Config.Producer.configuration
   end
 end

@@ -3,7 +3,7 @@ use Mix.Config
 config :kaffe,
   kafka_mod: TestBrod,
   group_subscriber_mod: TestBrodGroupSubscriber,
-  test_partition_count: 17,
+  test_partition_count: 32,
   consumer: [
     endpoints: [kafka: 9092],
     topics: ["kaffe-test"],

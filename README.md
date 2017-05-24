@@ -10,7 +10,7 @@ An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka cl
 
       ```elixir
       def deps do
-        [{:kaffe, "~> 0.5"}]
+        [{:kaffe, "~> 1.0"}]
       end
       ```
 
@@ -151,9 +151,9 @@ Batch message consumers receive a list of messages and work as part of the `:bro
   3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your
      supervision tree
 
-    ```elixir
-    supervisor(Kaffe.GroupMemberSupervisor, [])
-    ```
+       ```elixir
+       supervisor(Kaffe.GroupMemberSupervisor, [])
+       ```
 
 ### async message acknowledgement
 
@@ -202,14 +202,13 @@ It's possible that your topic and system are entirely ok with losing some messag
           topics: ["kafka-topic"],
 
           # optional
-          partition_strategy: :round_robin
+          partition_strategy: :md5
         ]
       ```
 
     The `partition_strategy` setting can be one of:
 
     - `:md5`: (default) provides even and deterministic distrbution of the messages over the available partitions based on an MD5 hash of the key
-    - `:round_robin`: cycle through each partition starting from 0 at application start
     - `:random`: select a random partition for each message
     - function: a given function to call to determine the correct partition
 
@@ -224,7 +223,7 @@ It's possible that your topic and system are entirely ok with losing some messag
         topics: ["kafka-topic"],
 
         # optional
-        partition_strategy: :round_robin
+        partition_strategy: :md5
       ]
     ```
 
@@ -235,7 +234,7 @@ It's possible that your topic and system are entirely ok with losing some messag
     - `KAFKA_CLIENT_CERT_KEY`
     - `KAFKA_TRUSTED_CERT`
 
-2. Add `Kaffe.Producer` as a worker in your supervision tree.
+2. Start `Kaffe.Producer` with your application
 
       ```elixir
       worker(Kaffe.Producer, [])
@@ -245,7 +244,15 @@ It's possible that your topic and system are entirely ok with losing some messag
 
 Currently only synchronous message production is supported.
 
-Once the `Kaffe.Producer` has started there are three ways to produce:
+Once the `Kaffe.Producer` has started there are several ways to produce:
+
+- `topic`/`message_list` - Produce each message in the list to the given `topic`. The messages are produced to the correct partition based on the configured partitioning strategy.
+
+    Each item in the list is a tuple of the key and value: `{key, value}`.
+
+    ```elixir
+    Kaffe.Producer.produce_sync("topic", [{"key1", "value1"}, {"key2", "value2"}])
+    ```
 
 - `key`/`value` - The key/value will be produced to the first topic given to the producer when it was started. The partition will be selected with the chosen strategy or given function.
 
