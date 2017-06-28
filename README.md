@@ -117,7 +117,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
 ### Kaffe GroupMember - Batch Message Consumer
 
 1. Define a `handle_messages/1` function in the provided module.
-  
+
       `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
       The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
@@ -144,7 +144,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
       - `:reset_to_earliest` - reset to the earliest available offset
       - `:reset_to_latest` - reset to the latest offset
       - `:reset_by_subscriber` - The subscriber receives the `OffsetOutOfRange` error
-        
+
       More information in the [Brod
       consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
 
@@ -273,6 +273,50 @@ Once the `Kaffe.Producer` has started there are several ways to produce:
     ```
 
     **NOTE**: With this approach Kaffe will not calculate the next partition since it assumes you're taking over that job by giving it a specific partition.
+
+
+## Runtime Configuration
+
+Kaffe can be configured at runtime by using another library: [Weave](https://github.com/GT8Online/weave).
+
+Weave allows parameters, from file or environment variables, to be consumed during application startup.
+
+### Example Handler
+
+```elixir
+# This expects an environment variable, or file, with the following contents:
+#
+# kafka_host_1:9092,kafka_host_2:9092
+#
+def handle_configuration("kafka_hosts", host_string) do
+  brokers = host_string
+  |> String.split(",")
+  |> Enum.map(fn(uri) ->
+      [host, port] = String.split(uri, ":")
+      Keyword.put([], String.to_atom(host), String.to_integer(port))
+    end)
+  |> List.flatten()
+
+  {:kaffe, :consumer, [endpoints: brokers]}
+end
+
+# This expects an environment variable, or file, with the following contents:
+#
+# topic_name
+#
+def handle_configuration("kafka_topic", topic) do
+  {:kaffe, :consumer, [topics: [topic]]}
+end
+
+# To subscribe to multiple topics, one can ensure the contents are:
+#
+# topic_name_1,topic_name_2,topic_name_3
+#
+def handle_configuration("kafka_topics", topics) do
+  {:kaffe, :consumer, [topics: String.split(topics, ",")}
+end
+```
+
 
 
 ## Testing
