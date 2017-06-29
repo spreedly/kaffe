@@ -117,7 +117,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
 ### Kaffe GroupMember - Batch Message Consumer
 
 1. Define a `handle_messages/1` function in the provided module.
-  
+
       `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
       The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
@@ -144,7 +144,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
       - `:reset_to_earliest` - reset to the earliest available offset
       - `:reset_to_latest` - reset to the latest offset
       - `:reset_by_subscriber` - The subscriber receives the `OffsetOutOfRange` error
-        
+
       More information in the [Brod
       consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
 
@@ -193,7 +193,7 @@ It's possible that your topic and system are entirely ok with losing some messag
 
 `Kaffe.Producer` handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message.
 
-1. Configure your Kaffe Producer in your mix config
+Configure your Kaffe Producer in your mix config
 
       ```elixir
       config :kaffe,
@@ -234,17 +234,11 @@ It's possible that your topic and system are entirely ok with losing some messag
     - `KAFKA_CLIENT_CERT_KEY`
     - `KAFKA_TRUSTED_CERT`
 
-2. Start `Kaffe.Producer` with your application
-
-      ```elixir
-      worker(Kaffe.Producer, [])
-      ```
-
 ### Producing to Kafka
 
 Currently only synchronous message production is supported.
 
-Once the `Kaffe.Producer` has started there are several ways to produce:
+There are several ways to produce:
 
 - `topic`/`message_list` - Produce each message in the list to the given `topic`. The messages are produced to the correct partition based on the configured partitioning strategy.
 
