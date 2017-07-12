@@ -248,6 +248,14 @@ There are several ways to produce:
     Kaffe.Producer.produce_sync("topic", [{"key1", "value1"}, {"key2", "value2"}])
     ```
 
+- `topic`/`partition`/`message_list` - Produce each message in the list to the given `topic`/`partition`.
+
+    Each item in the list is a tuple of the key and value: `{key, value}`.
+
+    ```elixir
+    Kaffe.Producer.produce_sync("topic", 2, [{"key1", "value1"}, {"key2", "value2"}])
+    ```
+
 - `key`/`value` - The key/value will be produced to the first topic given to the producer when it was started. The partition will be selected with the chosen strategy or given function.
 
     ```elixir

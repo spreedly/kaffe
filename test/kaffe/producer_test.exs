@@ -36,6 +36,12 @@ defmodule Kaffe.ProducerTest do
       assert_receive [:produce_sync, "topic2", ^partition, "key", "value"]
     end
 
+    test "(topic, partition, key, message_list) produces a list of messages to the specific topic/parition" do
+      partition = 99
+      :ok = Producer.produce_sync("topic2", partition, [{"key8", "value1"}, {"key12", "value2"}])
+      assert_receive [:produce_sync, "topic2", ^partition, "ignored", [{"key8", "value1"}, {"key12", "value2"}]]
+    end
+
     test "passes through the result" do
       TestBrod.set_produce_response(response = {:error, {:producer_down, :noproc}})
       assert response == Producer.produce_sync("key", "value")

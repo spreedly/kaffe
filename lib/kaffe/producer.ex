@@ -42,7 +42,7 @@ defmodule Kaffe.Producer do
        * `{:error, reason}` for any error
   """
   def produce_sync(topic, message_list) when is_list(message_list) do
-    produce_list(topic, message_list)
+    produce_list(topic, message_list, global_partition_strategy())
   end
 
   @doc """
@@ -59,6 +59,20 @@ defmodule Kaffe.Producer do
   def produce_sync(key, value) do
     topic = config().topics |> List.first
     produce(topic, key, value)
+  end
+
+  @doc """
+  Synchronously produce the `message_list` to `topic`/`partition`
+
+  `message_list` must be a list of `{key, value}` tuples
+
+  Returns:
+
+       * `:ok` on successfully producing each message
+       * `{:error, reason}` for any error
+  """
+  def produce_sync(topic, partition, message_list) when is_list(message_list) do
+    produce_list(topic, message_list, fn _, _, _, _ -> partition end)
   end
 
   @doc """
@@ -83,25 +97,25 @@ defmodule Kaffe.Producer do
   ## internal
   ## -------------------------------------------------------------------------
 
-  defp produce_list(topic, message_list) when is_list(message_list) do
+  defp produce_list(topic, message_list, partition_strategy) when is_list(message_list) do
     Logger.debug "event#produce_list topic=#{topic}"
     message_list
-    |> group_by_partition(topic)
+    |> group_by_partition(topic, partition_strategy)
     |> produce_list_to_topic(topic)
   end
 
   defp produce(topic, key, value) do
     {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
-    partition = choose_partition(topic, partitions_count, key, value, partition_strategy())
+    partition = choose_partition(topic, partitions_count, key, value, global_partition_strategy())
     Logger.debug "event#produce topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
     @kafka.produce_sync(client_name(), topic, partition, key, value)
   end
 
-  defp group_by_partition(messages, topic) do
+  defp group_by_partition(messages, topic, partition_strategy) do
     {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
     messages
     |> Enum.group_by(fn ({key, message}) ->
-      choose_partition(topic, partitions_count, key, message, partition_strategy())
+      choose_partition(topic, partitions_count, key, message, partition_strategy)
     end)
   end
 
@@ -132,7 +146,7 @@ defmodule Kaffe.Producer do
     config().client_name
   end
 
-  defp partition_strategy do
+  defp global_partition_strategy do
     config().partition_strategy
   end
 
