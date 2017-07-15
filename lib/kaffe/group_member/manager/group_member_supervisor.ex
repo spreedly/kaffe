@@ -34,7 +34,7 @@ defmodule Kaffe.GroupMemberSupervisor do
   end
 
   defp name do
-    :"group_member_supervisor_#{subscriber_name()}"
+    :"kaffe_group_member_supervisor_#{subscriber_name()}"
   end
 
   defp subscriber_name do

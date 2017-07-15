@@ -19,7 +19,7 @@ defmodule Kaffe.GroupMemberTest do
   end
 
   defmodule TestWorkerManager do
-    def worker_for(_pid, _partition) do
+    def worker_for(_pid, _topic, _partition) do
       send :test_case, {:worker_for}
       {:ok, self()}
     end

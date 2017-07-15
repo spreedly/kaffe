@@ -15,11 +15,11 @@ defmodule Kaffe.WorkerSupervisor do
     Supervisor.start_child(pid, worker(Kaffe.WorkerManager, [subscriber_name]))
   end
 
-  def start_worker(pid, message_handler, subscriber_name, partition) do
-    Logger.debug "Starting worker for partition: #{partition}"
+  def start_worker(pid, message_handler, subscriber_name, worker_name) do
+    Logger.debug "Starting worker: #{worker_name}"
     Supervisor.start_child(pid,
-      worker(Kaffe.Worker, [message_handler, subscriber_name, partition],
-        id: :"worker_#{subscriber_name}_#{partition}"))
+      worker(Kaffe.Worker, [message_handler, subscriber_name, worker_name],
+        id: :"worker_#{subscriber_name}_#{worker_name}"))
   end
 
   def init(subscriber_name) do

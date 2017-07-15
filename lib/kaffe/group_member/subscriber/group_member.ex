@@ -109,7 +109,7 @@ defmodule Kaffe.GroupMember do
       Logger.debug "Allocating subscriber for assignment: #{inspect assignment}"
       {:brod_received_assignment, topic, partition, offset} = assignment
 
-      worker_pid = worker_manager().worker_for(state.worker_manager_pid, partition)
+      worker_pid = worker_manager().worker_for(state.worker_manager_pid, topic, partition)
 
       {:ok, pid} = subscriber().subscribe(
         state.subscriber_name,
@@ -164,7 +164,7 @@ defmodule Kaffe.GroupMember do
   end
 
   defp name(subscriber_name, topic) do
-    :"group_member_#{subscriber_name}_#{topic}"
+    :"kaffe_group_member_#{subscriber_name}_#{topic}"
   end
 
 end

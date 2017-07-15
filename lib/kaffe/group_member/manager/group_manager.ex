@@ -69,7 +69,7 @@ defmodule Kaffe.GroupManager do
   end
 
   defp name do
-    :"group_manager_#{subscriber_name()}"
+    :"kaffe_group_manager_#{subscriber_name()}"
   end
 
   defp subscriber_name do

@@ -1,6 +1,8 @@
 # Kaffe
 
-An opinionated, highly specific, Elixir wrapper around brod: the Erlang Kafka client. :coffee:
+An opinionated, highly specific, Elixir wrapper around
+[Brod](https://github.com/klarna/brod): the Erlang Kafka client.
+:coffee:
 
 **NOTE**: Although we're using this in production at Spreedly it is still under active development. The API may change and there may be serious bugs we've yet to encounter.
 
@@ -122,7 +124,22 @@ Batch message consumers receive a list of messages and work as part of the `:bro
 
       The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
 
-2. The configuration options for the GroupMember consumer are a superset of those for `Kaffe.Consumer`. The additional options are:
+      ```elixir
+      defmodule MessageProcessor
+        def handle_messages(messages) do
+          for %{key: key, value: value} = _message <- messages do
+            IO.inspect message
+            IO.puts "#{key}: #{value}"
+          end
+          :ok # Important!
+        end
+      end
+      ```
+
+2. The configuration options for the `GroupMember` consumer are a
+   superset of those for `Kaffe.Consumer`, except for
+   `:async_message_ack`, which is not supported. The additional options
+   are:
 
       `:rebalance_delay_ms` which is the time to allow for rebalancing
       among workers. The default is 10,000, which should give the
@@ -147,6 +164,23 @@ Batch message consumers receive a list of messages and work as part of the `:bro
 
       More information in the [Brod
       consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
+
+      `:worker_allocation_strategy` controls how workers are allocated with respect to consumed topics and partitions.
+      - `:worker_per_partition` - this is the default (for backward compatibilty) and allocates a single worker per partition across topics. This is useful for managing concurrent processing of messages that may be received from any consumed topic.
+      - `:worker_per_topic_partition` - this strategy allocates a worker per topic partition. This means there will be a worker for every topic partition consumed. Unless you need to control concurrency across topics, you should use this strategy.
+
+      ```elixir
+      config :kaffe,
+        consumer: [
+          endpoints: [kafka: 9092],
+          topics: ["interesting-topic"],
+          consumer_group: "your-app-consumer-group",
+          message_handler: MessageProcessor,
+          offset_reset_policy: :reset_to_latest,
+          max_bytes: 500_000,
+          worker_allocation_strategy: :worker_per_topic_partition,
+        ],
+      ```
 
   3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your
      supervision tree

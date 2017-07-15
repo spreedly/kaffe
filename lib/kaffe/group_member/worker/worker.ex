@@ -1,26 +1,26 @@
 defmodule Kaffe.Worker do
   @moduledoc """
-  A worker is assigned a single partition across topics for the client. This is
-  so we effectively serialize the processing of any single key across topics.
 
-  Processing the message set is delegated to the configured message handler. It
-  is responsible for any error handling. The message handler must define a
-  `handle_messages` function (*note* the pluralization!) to accept a list of
-  messages.
+  A worker receives messages for a single topic partition.
 
-  The result of handle message is sent back to the subscriber.
+  Processing the message set is delegated to the configured message
+  handler. It is responsible for any error handling. The message handler
+  must define a `handle_messages` function (*note* the pluralization!)
+  to accept a list of messages.
+
+  The result of `handle_messages` is sent back to the subscriber.
   """
 
   require Logger
 
-  def start_link(message_handler, subscriber_name, partition) do
-    GenServer.start_link(__MODULE__, [message_handler, partition], name: name(subscriber_name, partition))
+  def start_link(message_handler, subscriber_name, worker_name) do
+    GenServer.start_link(__MODULE__, [message_handler, worker_name],
+        name: name(subscriber_name, worker_name))
   end
 
-  def init([message_handler, partition]) do
-    Logger.info "event#starting=#{__MODULE__} partition=#{partition}"
-    {:ok, %{message_handler: message_handler,
-            partition: partition}}
+  def init([message_handler, worker_name]) do
+    Logger.info "event#starting=#{__MODULE__} name=#{worker_name}"
+    {:ok, %{message_handler: message_handler, worker_name: worker_name}}
   end
 
   def process_messages(pid, subscriber_pid, topic, partition, generation_id, messages) do
@@ -41,8 +41,8 @@ defmodule Kaffe.Worker do
     Logger.info "event#terminate=#{inspect self()} reason=#{inspect reason}"
   end
 
-  defp name(subscriber_name, partition) do
-    :"partition_worker_#{subscriber_name}_#{partition}"
+  defp name(subscriber_name, worker_name) do
+    :"kaffe_#{subscriber_name}_#{worker_name}"
   end
 
   defp subscriber do

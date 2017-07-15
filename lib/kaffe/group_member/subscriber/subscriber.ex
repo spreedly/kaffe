@@ -168,7 +168,7 @@ defmodule Kaffe.Subscriber do
   end
 
   defp name(subscriber_name, topic, partition) do
-    :"subscriber_#{subscriber_name}_#{topic}_#{partition}"
+    :"kaffe_subscriber_#{subscriber_name}_#{topic}_#{partition}"
   end
 
 end
