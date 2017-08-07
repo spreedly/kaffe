@@ -240,15 +240,17 @@ Configure your Kaffe Producer in your mix config
         ]
       ```
 
-    The `partition_strategy` setting can be one of:
+The `partition_strategy` setting can be one of:
 
-    - `:md5`: (default) provides even and deterministic distrbution of the messages over the available partitions based on an MD5 hash of the key
-    - `:random`: select a random partition for each message
-    - function: a given function to call to determine the correct partition
+- `:md5`: (default) provides even and deterministic distrbution of the messages over the available partitions based on an MD5 hash of the key
+- `:random`: select a random partition for each message
+- function: a given function to call to determine the correct partition
 
-    ### Heroku Configuration
+You can also set any of the Brod producer configuration options in the `producer` section - see [the Brod sources](https://github.com/klarna/brod/blob/master/src/brod_producer.erl#L90) for a list of keys and their meaning.
 
-    To configure a Kaffe Producer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
+### Heroku Configuration
+
+To configure a Kaffe Producer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
 
     ```elixir
     config :kaffe,
@@ -261,7 +263,7 @@ Configure your Kaffe Producer in your mix config
       ]
     ```
 
-    With that setting in place Kaffe will automatically pull required info from the following ENV variables:
+With that setting in place Kaffe will automatically pull required info from the following ENV variables:
 
     - `KAFKA_URL`
     - `KAFKA_CLIENT_CERT`

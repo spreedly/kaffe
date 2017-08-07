@@ -35,7 +35,15 @@ defmodule Kaffe.Config.Producer do
       auto_start_producers: true,
       allow_topic_auto_creation: false,
       default_producer_config: [
-        required_acks: -1
+        required_acks: config_get(:required_acks, -1),
+        ack_timeout: config_get(:ack_timeout, 1000),
+        partition_buffer_limit: config_get(:partition_buffer_limit, 512),
+        partition_onwire_limit: config_get(:partition_onwire_limit, 1),
+        max_batch_size: config_get(:max_batch_size, 1048576),
+        max_retries: config_get(:max_retries, 3),
+        retry_backoff_ms: config_get(:retry_backoff_ms, 500),
+        compression: config_get(:compression, :no_compression),
+        min_compression_batch_size: config_get(:min_compression_batch_size, 1024)
       ]
     ]
   end
