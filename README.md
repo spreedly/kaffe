@@ -246,6 +246,8 @@ Configure your Kaffe Producer in your mix config
     - `:random`: select a random partition for each message
     - function: a given function to call to determine the correct partition
 
+    You can also set any of the Brod producer configuration options in the `producer` section - see [the Brod sources](https://github.com/klarna/brod/blob/master/src/brod_producer.erl#L90) for a list of keys and their meaning.
+
     ### Heroku Configuration
 
     To configure a Kaffe Producer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
