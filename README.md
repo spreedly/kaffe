@@ -313,6 +313,50 @@ There are several ways to produce:
     **NOTE**: With this approach Kaffe will not calculate the next partition since it assumes you're taking over that job by giving it a specific partition.
 
 
+## Runtime Configuration
+
+Kaffe can be configured at runtime by using another library: [Weave](https://github.com/GT8Online/weave).
+
+Weave allows parameters, from file or environment variables, to be consumed during application startup.
+
+### Example Handler
+
+```elixir
+# This expects an environment variable, or file, with the following contents:
+#
+# kafka_host_1:9092,kafka_host_2:9092
+#
+def handle_configuration("kafka_hosts", host_string) do
+  brokers = host_string
+  |> String.split(",")
+  |> Enum.map(fn(uri) ->
+      [host, port] = String.split(uri, ":")
+      Keyword.put([], String.to_atom(host), String.to_integer(port))
+    end)
+  |> List.flatten()
+
+  {:kaffe, :consumer, [endpoints: brokers]}
+end
+
+# This expects an environment variable, or file, with the following contents:
+#
+# topic_name
+#
+def handle_configuration("kafka_topic", topic) do
+  {:kaffe, :consumer, [topics: [topic]]}
+end
+
+# To subscribe to multiple topics, one can ensure the contents are:
+#
+# topic_name_1,topic_name_2,topic_name_3
+#
+def handle_configuration("kafka_topics", topics) do
+  {:kaffe, :consumer, [topics: String.split(topics, ",")}
+end
+```
+
+
+
 ## Testing
 
 ### Setup
