@@ -37,7 +37,7 @@ defmodule Kaffe.Producer do
   `messages` must be a list of `{key, value}` tuples
 
   Returns:
-  
+
        * `:ok` on successfully producing each message
        * `{:error, reason}` for any error
   """
@@ -52,7 +52,7 @@ defmodule Kaffe.Producer do
   for production and don't want to specify the topic for each call.
 
   Returns:
-  
+
        * `:ok` on successfully producing the message
        * `{:error, reason}` for any error
   """
@@ -122,7 +122,7 @@ defmodule Kaffe.Producer do
   defp produce_list_to_topic(message_list, topic) do
     message_list
     |> Enum.reduce_while(:ok, fn ({partition, messages}, :ok) ->
-      Logger.debug "event#produce_list_to_topic partition=#{partition} messages=#{inspect messages}"
+      Logger.debug "event#produce_list_to_topic topic=#{topic} partition=#{partition}"
       case @kafka.produce_sync(client_name(), topic, partition, "ignored", messages) do
         :ok -> {:cont, :ok}
         {:error, _reason} = error -> {:halt, error}
