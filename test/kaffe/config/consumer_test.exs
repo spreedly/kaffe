@@ -29,6 +29,7 @@ defmodule Kaffe.Config.ConsumerTest do
         async_message_ack: false,
         rebalance_delay_ms: 100,
         max_bytes: 10_000,
+        max_messages: 50,
         subscriber_retries: 1,
         subscriber_retry_delay_ms: 5,
         offset_reset_policy: :reset_by_subscriber,

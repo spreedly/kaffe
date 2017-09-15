@@ -153,6 +153,15 @@ Batch message consumers receive a list of messages and work as part of the `:bro
       with 32 partitions, there is the potential of 64MB in buffered
       messages at any one time.
 
+      `:max_messages` limits the number of messages sent to `handle_messages` in a single
+      call. If you have a topic with varying message sizes, you can use this to restrict the
+      amount of work in a single call instead of `:max_bytes`- if message batches are too large
+      then too much work can happen causing all sorts of issues. What this does is call your
+      callback multiple times when a too large message batch is retrieved so that you can contol
+      how much work is done in a single call to `handle_messages`. Each sub-batch is acknowledged
+      invidivually so if you crash, you don't lose too much progress. The default is set at 1
+      million (which roughly means: "don't bother with this").
+
       `:offset_reset_policy` controls how the subscriber handles an
       expired offset. See the Kafka consumer option,
       [`auto.offset.reset`](https://kafka.apache.org/documentation/#newconsumerconfigs).
@@ -178,6 +187,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
           message_handler: MessageProcessor,
           offset_reset_policy: :reset_to_latest,
           max_bytes: 500_000,
+          max_messages: 50,
           worker_allocation_strategy: :worker_per_topic_partition,
         ],
       ```
