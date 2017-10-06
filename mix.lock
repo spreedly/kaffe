@@ -1,8 +1,8 @@
-%{"brod": {:hex, :brod, "2.3.1", "c80036a92fff8a6be1182293c2cf353fa13e7deb11747d09fe0ae3fcd8d10f54", [:make, :rebar, :rebar3], [{:kafka_protocol, "0.9.1", [hex: :kafka_protocol, repo: "hexpm", optional: false]}, {:supervisor3, "1.1.5", [hex: :supervisor3, repo: "hexpm", optional: false]}], "hexpm"},
-  "earmark": {:hex, :earmark, "1.2.2", "f718159d6b65068e8daeef709ccddae5f7fdc770707d82e7d126f584cd925b74", [:mix], [], "hexpm"},
-  "ex_doc": {:hex, :ex_doc, "0.15.1", "d5f9d588fd802152516fccfdb96d6073753f77314fcfee892b15b6724ca0d596", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
-  "kafka_protocol": {:hex, :kafka_protocol, "0.9.1", "8e943f26590a1ae034422fb8305f64a1aa21ff6dea4fb51e36b702c410861205", [:make, :rebar, :rebar3], [{:snappyer, "1.2.0", [hex: :snappyer, repo: "hexpm", optional: false]}], "hexpm"},
+%{"brod": {:hex, :brod, "3.2.0", "64f0778a7a32ec0a39cec9a564f4686bdfe72b147b48076e114a156fd0a30222", [:make, :rebar, :rebar3], [{:kafka_protocol, "1.1.0", [repo: "hexpm", hex: :kafka_protocol, optional: false]}, {:supervisor3, "1.1.5", [repo: "hexpm", hex: :supervisor3, optional: false]}], "hexpm"},
+  "earmark": {:hex, :earmark, "1.2.2", "f718159d6b65068e8daeef709ccddae5f7fdc770707d82e7d126f584cd925b74", [:mix], []},
+  "ex_doc": {:hex, :ex_doc, "0.15.1", "d5f9d588fd802152516fccfdb96d6073753f77314fcfee892b15b6724ca0d596", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, optional: false]}]},
+  "kafka_protocol": {:hex, :kafka_protocol, "1.1.0", "817c07a6339cbfb32d1f20a588353bf8d9a8944df296eb2e930360b83760c171", [:rebar, :rebar3], [{:snappyer, "1.2.1", [repo: "hexpm", hex: :snappyer, optional: false]}], "hexpm"},
   "logfmt": {:hex, :logfmt, "3.2.0", "887a091adad28acc6e4d8b3d3bce177b934e7c61e7655c86946410f44aca6d84", [:mix], []},
   "metrix": {:git, "https://github.com/rwdaigle/metrix.git", "a6738df9346da0412ca68f82a24a67d2a32b066e", [branch: "master"]},
-  "snappyer": {:hex, :snappyer, "1.2.0", "4761f475c53fec4a027dc90ea0626a735e3d276bfcfaf9a8dc4c7bbda4d1e058", [:make, :rebar, :rebar3], [], "hexpm"},
-  "supervisor3": {:hex, :supervisor3, "1.1.5", "5f3c487a6eba23de0e64c06e93efa0eca06f40324a6412c1318c77aca6da8424", [:make, :rebar, :rebar3], [], "hexpm"}}
+  "snappyer": {:hex, :snappyer, "1.2.1", "06c5f5c8afe80ba38e94e1ca1bd9253de95d8f2c85b08783e8d0f63815580556", [:make, :rebar, :rebar3], [], "hexpm"},
+  "supervisor3": {:hex, :supervisor3, "1.1.5", "5f3c487a6eba23de0e64c06e93efa0eca06f40324a6412c1318c77aca6da8424", [:make, :rebar, :rebar3], []}}

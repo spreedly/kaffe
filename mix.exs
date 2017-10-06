@@ -3,7 +3,7 @@ defmodule Kaffe.Mixfile do
 
   def project do
     [app: :kaffe,
-     version: "1.3.1",
+     version: "1.4.0",
      description: "An opinionated Elixir wrapper around brod, the Erlang Kafka client, that supports encrypted connections to Heroku Kafka out of the box.",
      name: "Kaffe",
      source_url: "https://github.com/spreedly/kaffe",
@@ -25,7 +25,7 @@ defmodule Kaffe.Mixfile do
 
   defp deps do
     [
-      {:brod, "~> 2.2"},
+      {:brod, "~> 3.0"},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
     ]
   end
