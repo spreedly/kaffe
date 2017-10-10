@@ -113,7 +113,7 @@ defmodule Kaffe.SubscriberTest do
 
   defp build_message_list do
     Enum.map(1..10, fn (n) ->
-      {:kafka_message, n, 0, 0, "key-#{n}", "#{n}", -1, 0, 0}
+      {:kafka_message, n, 0, 0, "key-#{n}", "#{n}", -1, :undefined, :undefined}
     end)
   end
 end
