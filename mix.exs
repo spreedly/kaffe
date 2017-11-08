@@ -25,7 +25,7 @@ defmodule Kaffe.Mixfile do
 
   defp deps do
     [
-      {:brod, "~> 2.2"},
+      {:brod, "~> 2.2 or ~> 3.0" },
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
     ]
   end

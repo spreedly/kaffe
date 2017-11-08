@@ -2,6 +2,7 @@ defmodule Kaffe.SubscriberTest do
 
   use ExUnit.Case
 
+  import Kaffe.Subscriber
   alias Kaffe.Subscriber
 
   defmodule TestKafka do
@@ -37,7 +38,7 @@ defmodule Kaffe.SubscriberTest do
   end
 
   test "handle message set" do
-    
+
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
@@ -49,7 +50,7 @@ defmodule Kaffe.SubscriberTest do
   end
 
   test "handle kafka_fetch_error" do
-    
+
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
@@ -66,7 +67,7 @@ defmodule Kaffe.SubscriberTest do
   end
 
   test "handle consumer down" do
-    
+
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
@@ -113,7 +114,14 @@ defmodule Kaffe.SubscriberTest do
 
   defp build_message_list do
     Enum.map(1..10, fn (n) ->
-      {:kafka_message, n, 0, 0, "key-#{n}", "#{n}", -1}
+      Subscriber.kafka_message(
+        offset: n,
+        magic_byte: 0,
+        attributes: 0,
+        key: "key-#{n}",
+        value: "#{n}",
+        crc: -1
+      )
     end)
   end
 end
