@@ -2,6 +2,7 @@ defmodule Kaffe.SubscriberTest do
 
   use ExUnit.Case
 
+  import Kaffe.Subscriber
   alias Kaffe.Subscriber
 
   defmodule TestKafka do
@@ -113,7 +114,14 @@ defmodule Kaffe.SubscriberTest do
 
   defp build_message_list do
     Enum.map(1..10, fn (n) ->
-      {:kafka_message, n, 0, 0, "key-#{n}", "#{n}", -1, :undefined, :undefined}
+      Subscriber.kafka_message(
+        offset: n,
+        magic_byte: 0,
+        attributes: 0,
+        key: "key-#{n}",
+        value: "#{n}",
+        crc: -1
+      )
     end)
   end
 end
