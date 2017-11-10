@@ -47,7 +47,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
     ### Example
 
       ```elixir
-      defmodule MessageProcessor
+      defmodule MessageProcessor do
         def handle_message(%{key: key, value: value} = message) do
           IO.inspect message
           IO.puts "#{key}: #{value}"
