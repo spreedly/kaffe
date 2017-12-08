@@ -2,7 +2,7 @@ defmodule Kaffe.SubscriberTest do
 
   use ExUnit.Case
 
-  import Kaffe.Subscriber
+  require Kaffe.Subscriber
   alias Kaffe.Subscriber
 
   defmodule TestKafka do

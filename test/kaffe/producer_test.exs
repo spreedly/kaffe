@@ -3,8 +3,6 @@ defmodule Kaffe.ProducerTest do
 
   alias Kaffe.Producer
 
-  @test_partition_count Application.get_env(:kaffe, :test_partition_count)
-
   setup do
     Process.register(self(), :test_case)
     update_producer_config(:topics, ["topic", "topic2"])
