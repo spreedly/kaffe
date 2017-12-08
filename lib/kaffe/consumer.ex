@@ -132,7 +132,7 @@ defmodule Kaffe.Consumer do
   end
 
   def handle_message(topic, partition, msg, %{async: true, message_handler: handler} = state) do
-    :ok = apply(handler, :handle_message, [self, compile_message(msg, topic, partition)])
+    :ok = apply(handler, :handle_message, [self(), compile_message(msg, topic, partition)])
     {:ok, state}
   end
 

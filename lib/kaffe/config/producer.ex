@@ -1,10 +1,10 @@
 defmodule Kaffe.Config.Producer do
   def configuration do
     %{
-      endpoints: endpoints,
-      producer_config: client_producer_config,
+      endpoints: endpoints(),
+      producer_config: client_producer_config(),
       client_name: config_get(:client_name, :kaffe_producer_client),
-      topics: producer_topics,
+      topics: producer_topics(),
       partition_strategy: config_get(:partition_strategy, :md5),
     }
   end
@@ -12,20 +12,20 @@ defmodule Kaffe.Config.Producer do
   def producer_topics, do: config_get!(:topics)
 
   def endpoints do
-    case heroku_kafka? do
-      true -> Kaffe.Config.heroku_kafka_endpoints
+    case heroku_kafka?() do
+      true -> Kaffe.Config.heroku_kafka_endpoints()
       false -> config_get!(:endpoints)
     end
   end
 
   def client_producer_config do
-    default_client_producer_config
-    ++ maybe_heroku_kafka_ssl
+    default_client_producer_config()
+    ++ maybe_heroku_kafka_ssl()
   end
 
   def maybe_heroku_kafka_ssl do
-    case heroku_kafka? do
-      true -> Kaffe.Config.ssl_config
+    case heroku_kafka?() do
+      true -> Kaffe.Config.ssl_config()
       false -> []
     end
   end
