@@ -1,67 +1,64 @@
 defmodule Kaffe.Config do
-  def heroku_kafka_endpoints do
-    "KAFKA_URL"
-    |> System.get_env
-    |> heroku_kafka_endpoints
+
+  @doc "Get list of endpoints in brod format"
+  @spec endpoints(Keyword.t) :: list({atom, non_neg_integer})
+  def endpoints(config) do
+    parse_kafka_urls(System.get_env("KAFKA_URL")) || Keyword.get(config, :endpoints, [])
   end
 
-  def heroku_kafka_endpoints(kafka_url) do
-    kafka_url
-    |> String.replace("kafka+ssl://", "")
-    |> String.replace("kafka://", "")
-    |> String.split(",")
-    |> Enum.map(&url_endpoint_to_tuple/1)
+  @doc "Parse Kafka URL(s) into list of endpoints"
+  @spec parse_kafka_urls(binary | nil) :: list({atom, non_neg_integer}) | nil
+  def parse_kafka_urls(nil), do: nil
+  def parse_kafka_urls(urls) do
+    for url <- String.split(urls, ","), do: parse_kafka_url(url)
   end
 
-  def url_endpoint_to_tuple(endpoint) do
-    [ip, port] = endpoint |> String.split(":")
-    {ip |> String.to_atom, port |> String.to_integer}
-  end
+  @doc "Parse Kafka URL into {host, port}"
+  @spec parse_kafka_url(binary) :: {atom, non_neg_integer}
+  def parse_kafka_url(<<"kafka://", host :: binary>>), do: parse_kafka_host(host, 9092)
+  def parse_kafka_url(<<"kafka+ssl://", host ::binary>>), do: parse_kafka_host(host, 9093)
 
-  def ssl_config do
-    ssl_config(client_cert(), client_cert_key())
-  end
-
-  def ssl_config(_client_cert=nil, _client_cert_key=nil) do
-    []
-  end
-
-  def ssl_config(client_cert, client_cert_key) do
-    [
-      ssl: [
-        cert: client_cert,
-        key: client_cert_key,
-      ]
-    ]
-  end
-
-  def client_cert do
-    case System.get_env("KAFKA_CLIENT_CERT") do
-      nil -> nil
-      cert -> extract_der(cert)
+  @spec parse_kafka_host(binary, non_neg_integer) :: {atom, non_neg_integer}
+  defp parse_kafka_host(host_port, default_port) do
+    case String.split(host_port, ":") do
+      [host, port] -> {String.to_atom(host), String.to_integer(port)}
+      [host] -> {String.to_atom(host), default_port}
     end
   end
 
-  def client_cert_key do
-    case System.get_env("KAFKA_CLIENT_CERT_KEY") do
-      nil -> nil
-      cert_key -> extract_type_and_der(cert_key)
-    end
+  @doc "Get ssl options from config and OS environment vars"
+  @spec ssl(Keyword.t) :: Keyword.t
+  def ssl(config) do
+    ssl_defaults = config[:ssl] || []
+    ssl_options(ssl_cert_option(System.get_env("KAFKA_CLIENT_CERT")) ++
+                ssl_key_option(System.get_env("KAFKA_CLIENT_CERT_KEY")) ++
+                ssl_cacerts_option(System.get_env("KAFKA_TRUSTED_CERT")) ++
+                ssl_defaults)
   end
 
-  def decode_pem(pem) do
-    pem
-    |> :public_key.pem_decode
-    |> List.first
+  @spec ssl_options(Keyword.t) :: Keyword.t
+  defp ssl_options([]), do: []
+  defp ssl_options(options), do: [ssl: options]
+
+  @spec ssl_cert_option(binary | nil) :: Keyword.t
+  def ssl_cert_option(nil), do: []
+  def ssl_cert_option(pem) do
+    [{_type, der, _cypher_info} | _] = :public_key.pem_decode(pem)
+    [cert: der]
   end
 
-  def extract_der(cert) do
-    {_type, der, _} = decode_pem(cert)
-    der
+  @spec ssl_key_option(binary | nil) :: Keyword.t
+  def ssl_key_option(nil), do: []
+  def ssl_key_option(pem) do
+    [{type, der, _cypher_info} | _] = :public_key.pem_decode(pem)
+    [key: {type, der}]
   end
 
-  def extract_type_and_der(cert_key) do
-    {type, der_cert, _} = decode_pem(cert_key)
-    {type, der_cert}
+  @spec ssl_cacerts_option(binary | nil) :: Keyword.t
+  def ssl_cacerts_option(nil), do: []
+  def ssl_cacerts_option(pem) do
+    certs = for {_type, der, _cypher_info} <- :public_key.pem_decode(pem), do: der
+    [cacerts: certs]
   end
+
 end

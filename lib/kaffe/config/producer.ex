@@ -11,23 +11,10 @@ defmodule Kaffe.Config.Producer do
 
   def producer_topics, do: config_get!(:topics)
 
-  def endpoints do
-    case heroku_kafka?() do
-      true -> Kaffe.Config.heroku_kafka_endpoints()
-      false -> config_get!(:endpoints)
-    end
-  end
+  def endpoints, do: Kaffe.Config.endpoints(config())
 
   def client_producer_config do
-    default_client_producer_config()
-    ++ maybe_heroku_kafka_ssl()
-  end
-
-  def maybe_heroku_kafka_ssl do
-    case heroku_kafka?() do
-      true -> Kaffe.Config.ssl_config()
-      false -> []
-    end
+    default_client_producer_config() ++ Kaffe.Config.ssl(config())
   end
 
   def default_client_producer_config do
@@ -48,17 +35,10 @@ defmodule Kaffe.Config.Producer do
     ]
   end
 
-  def heroku_kafka? do
-    config_get(:heroku_kafka_env, false)
-  end
+  def config, do: Application.get_env(:kaffe, :producer)
 
-  def config_get!(key) do
-    Application.get_env(:kaffe, :producer)
-    |> Keyword.fetch!(key)
-  end
+  def config_get!(key), do: Keyword.fetch!(config(), key)
 
-  def config_get(key, default) do
-    Application.get_env(:kaffe, :producer)
-    |> Keyword.get(key, default)
-  end
+  def config_get(key, default), do: Keyword.get(config(), key, default)
+
 end
