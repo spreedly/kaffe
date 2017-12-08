@@ -1,6 +1,6 @@
 defmodule SendMessage do
   def handle_message(message) do
-    send self, message
+    send self(), message
     :ok
   end
 
