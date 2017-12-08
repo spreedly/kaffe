@@ -67,7 +67,9 @@ Batch message consumers receive a list of messages and work as part of the `:bro
       offset: 41,
       partition: 17,
       topic: "some-kafka-topic",
-      value: "the actual kafka message value is here"
+      value: "the actual kafka message value is here",
+      ts: 1234567890123, # timestamp in milliseconds
+      ts_type: :append  # timestamp type: :undefined | :create | :append
     }
     ```
 
@@ -127,7 +129,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
       ```elixir
       defmodule MessageProcessor
         def handle_messages(messages) do
-          for %{key: key, value: value} = _message <- messages do
+          for %{key: key, value: value} = message <- messages do
             IO.inspect message
             IO.puts "#{key}: #{value}"
           end
