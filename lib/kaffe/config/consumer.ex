@@ -1,16 +1,16 @@
 defmodule Kaffe.Config.Consumer do
   def configuration do
     %{
-      endpoints: endpoints,
-      subscriber_name: subscriber_name,
-      consumer_group: consumer_group,
-      topics: topics,
-      group_config: consumer_group_config,
-      consumer_config: client_consumer_config,
-      message_handler: message_handler,
-      async_message_ack: async_message_ack,
-      rebalance_delay_ms: rebalance_delay_ms,
-      max_bytes: max_bytes,
+      endpoints: endpoints(),
+      subscriber_name: subscriber_name(),
+      consumer_group: consumer_group(),
+      topics: topics(),
+      group_config: consumer_group_config(),
+      consumer_config: client_consumer_config(),
+      message_handler: message_handler(),
+      async_message_ack: async_message_ack(),
+      rebalance_delay_ms: rebalance_delay_ms(),
+      max_bytes: max_bytes(),
       subscriber_retries: subscriber_retries(),
       subscriber_retry_delay_ms: subscriber_retry_delay_ms(),
       offset_reset_policy: offset_reset_policy(),
@@ -20,7 +20,7 @@ defmodule Kaffe.Config.Consumer do
 
   def consumer_group, do: config_get!(:consumer_group)
 
-  def subscriber_name, do: config_get(:subscriber_name, consumer_group) |> String.to_atom
+  def subscriber_name, do: config_get(:subscriber_name, consumer_group()) |> String.to_atom
 
   def topics, do: config_get!(:topics)
 
@@ -29,8 +29,8 @@ defmodule Kaffe.Config.Consumer do
   def async_message_ack, do: config_get(:async_message_ack, false)
 
   def endpoints do
-    case heroku_kafka? do
-      true -> Kaffe.Config.heroku_kafka_endpoints
+    case heroku_kafka?() do
+      true -> Kaffe.Config.heroku_kafka_endpoints()
       false -> config_get!(:endpoints)
     end
   end
@@ -59,15 +59,15 @@ defmodule Kaffe.Config.Consumer do
   end
 
   def client_consumer_config do
-    default_client_consumer_config
-    ++ maybe_heroku_kafka_ssl
+    default_client_consumer_config()
+    ++ maybe_heroku_kafka_ssl()
   end
 
   def default_client_consumer_config do
     [
       auto_start_producers: false,
       allow_topic_auto_creation: false,
-      begin_offset: begin_offset,
+      begin_offset: begin_offset(),
     ]
   end
 
@@ -87,8 +87,8 @@ defmodule Kaffe.Config.Consumer do
   end
 
   def maybe_heroku_kafka_ssl do
-    case heroku_kafka? do
-      true -> Kaffe.Config.ssl_config
+    case heroku_kafka?() do
+      true -> Kaffe.Config.ssl_config()
       false -> []
     end
   end
