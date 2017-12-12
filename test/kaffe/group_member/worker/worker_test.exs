@@ -11,9 +11,10 @@ defmodule Kaffe.WorkerTest do
   end
   
   defmodule TestHandler do
-    def handle_messages(messages) do
+    def init_handler(), do: {:ok, :some_state}
+    def handle_messages(messages, state) do
       send :test_case, {:handle_messages, messages}
-      :ok
+      {:ok, state}
     end
   end
 

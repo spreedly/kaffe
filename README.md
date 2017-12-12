@@ -120,20 +120,25 @@ Batch message consumers receive a list of messages and work as part of the `:bro
 
 ### Kaffe GroupMember - Batch Message Consumer
 
-1. Define a `handle_messages/1` function in the provided module.
+1. Define a `init_handler/0` and a `handle_messages/2` function in the provided module.
 
-      `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
+      `init_handler/0` This function will be called upon consumer initialization and should return `{:ok, state}`. This state will be passed to the `handle_messages/2`callback
 
-      The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
+      `handle_messages/2` This function (note the pluralization) will be called with a *list of messages* and the state, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
+
+      The module's `handle_messages/2` function _must_ return `{:ok, state}` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/2` function returns `{:ok, state}`.
 
       ```elixir
       defmodule MessageProcessor
-        def handle_messages(messages) do
+        def init_handler() do
+          {:ok, 0} # initial state, number of messages received
+        end
+        def handle_messages(messages, state) do
           for %{key: key, value: value} = message <- messages do
             IO.inspect message
             IO.puts "#{key}: #{value}"
           end
-          :ok # Important!
+          {:ok, state + Enum.count(messages)} # Important!
         end
       end
       ```

@@ -5,8 +5,9 @@ defmodule Kaffe.Worker do
 
   Processing the message set is delegated to the configured message
   handler. It is responsible for any error handling. The message handler
-  must define a `handle_messages` function (*note* the pluralization!)
-  to accept a list of messages.
+  must define a `init_handler/0` function that should return `{:ok, state}`, and
+  a `handle_messages` function (*note* the pluralization!)
+  to accept a list of messages and a state, and returns `{:ok, state}`.
 
   The result of `handle_messages` is sent back to the subscriber.
   """
@@ -20,7 +21,8 @@ defmodule Kaffe.Worker do
 
   def init([message_handler, worker_name]) do
     Logger.info "event#starting=#{__MODULE__} name=#{worker_name}"
-    {:ok, %{message_handler: message_handler, worker_name: worker_name}}
+    {:ok, handler_state } = apply(message_handler, :init_handler, [])
+    {:ok, %{message_handler: message_handler, worker_name: worker_name, handler_state: handler_state}}
   end
 
   def process_messages(pid, subscriber_pid, topic, partition, generation_id, messages) do
@@ -28,13 +30,13 @@ defmodule Kaffe.Worker do
   end
 
   def handle_cast({:process_messages, subscriber_pid, topic, partition, generation_id, messages},
-      %{message_handler: message_handler} = state) do
+      %{message_handler: message_handler, handler_state: handler_state} = state) do
 
-    :ok = apply(message_handler, :handle_messages, [messages])
+   {:ok, new_handler_state} = apply(message_handler, :handle_messages, [messages, handler_state])
     offset = Enum.reduce(messages, 0, &max(&1.offset, &2))
     subscriber().ack_messages(subscriber_pid, topic, partition, generation_id, offset)
 
-    {:noreply, state}
+    {:noreply, %{state| handler_state: new_handler_state}}
   end
 
   def terminate(reason, _state) do
