@@ -5,8 +5,8 @@ defmodule Kaffe.WorkerTest do
   alias Kaffe.Worker
 
   defmodule TestSubscriber do
-    def ack_messages(_subscriber_pid, topic, partition, generation_id, offset) do
-      send :test_case, {:ack_messages, {topic, partition, generation_id, offset}}
+    def ack_messages(_subscriber_pid, topic, partition, generation_id, offset, ack? \\ true) do
+      send :test_case, {:ack_messages, {topic, partition, generation_id, offset, ack?}}
     end
   end
   
@@ -30,6 +30,6 @@ defmodule Kaffe.WorkerTest do
       [%{key: :one, offset: 100}, %{key: :two, offset: 101}])
 
     assert_receive {:handle_messages, [%{key: :one, offset: 100}, %{key: :two, offset: 101}]}
-    assert_receive {:ack_messages, {"topic", 1, 2, 101}}
+    assert_receive {:ack_messages, {"topic", 1, 2, 101, true}}
   end
 end
