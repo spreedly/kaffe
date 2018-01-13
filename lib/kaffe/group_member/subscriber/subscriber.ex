@@ -102,7 +102,7 @@ defmodule Kaffe.Subscriber do
 
   def handle_cast({:ack_messages, topic, partition, generation_id, offset, ack?}, state) do
 
-    Logger.debug "Ready to ack messages of #{state.topic} / #{state.partition} / #{generation_id} at offset: #{offset}"
+    Logger.debug "Ready to ack messages of #{state.topic} / #{state.partition} / #{generation_id} / #{ack?} at offset: #{offset}"
 
     # Is this the ack we're looking for?
     ^topic = state.topic
