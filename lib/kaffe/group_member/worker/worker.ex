@@ -31,7 +31,7 @@ defmodule Kaffe.Worker do
       %{message_handler: message_handler} = state) do
 
     :ok = apply(message_handler, :handle_messages, [messages])
-    offset = Enum.reduce(messages, 0, &max(&1.offset, &2))
+    offset = List.last(messages).offset
     subscriber().ack_messages(subscriber_pid, topic, partition, generation_id, offset)
 
     {:noreply, state}
