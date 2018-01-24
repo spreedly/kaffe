@@ -100,6 +100,7 @@ defmodule Kaffe.Producer do
   defp produce_list(topic, message_list, partition_strategy) when is_list(message_list) do
     Logger.debug "event#produce_list topic=#{topic}"
     message_list
+    |> add_timestamp
     |> group_by_partition(topic, partition_strategy)
     |> produce_list_to_topic(topic)
   end
@@ -111,10 +112,17 @@ defmodule Kaffe.Producer do
     @kafka.produce_sync(client_name(), topic, partition, key, value)
   end
 
+  defp add_timestamp(messages) do
+    messages
+    |> Enum.map(fn ({key, message}) ->
+      {System.system_time(:millisecond), key, message}
+    end)
+  end
+
   defp group_by_partition(messages, topic, partition_strategy) do
     {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
     messages
-    |> Enum.group_by(fn ({key, message}) ->
+    |> Enum.group_by(fn ({_timestamp, key, message}) ->
       choose_partition(topic, partitions_count, key, message, partition_strategy)
     end)
   end

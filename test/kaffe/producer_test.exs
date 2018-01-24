@@ -20,7 +20,8 @@ defmodule Kaffe.ProducerTest do
 
     test "(topic, message_list) produces a list of messages to the specific topic" do
       :ok = Producer.produce_sync("topic2", [{"key8", "value1"}, {"key12", "value2"}])
-      assert_receive [:produce_sync, "topic2", 17, "ignored", [{"key8", "value1"}, {"key12", "value2"}]]
+      assert_receive [:produce_sync, "topic2", 17, "ignored",
+        [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
     end
 
     test "(topic, key, value) produces a message to the specific topic" do
@@ -37,7 +38,8 @@ defmodule Kaffe.ProducerTest do
     test "(topic, partition, key, message_list) produces a list of messages to the specific topic/parition" do
       partition = 99
       :ok = Producer.produce_sync("topic2", partition, [{"key8", "value1"}, {"key12", "value2"}])
-      assert_receive [:produce_sync, "topic2", ^partition, "ignored", [{"key8", "value1"}, {"key12", "value2"}]]
+      assert_receive [:produce_sync, "topic2", ^partition, "ignored",
+        [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
     end
 
     test "passes through the result" do
@@ -113,7 +115,6 @@ defmodule Kaffe.ProducerTest do
       assert_receive [:produce_sync, "topic", 0, "key", "value"]
     end
   end
-
 
   defp update_producer_config(key, value) do
     producer_config = Application.get_env(:kaffe, :producer)

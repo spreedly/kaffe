@@ -227,7 +227,7 @@ It's possible that your topic and system are entirely ok with losing some messag
 
 ## Kaffe Producer Usage
 
-`Kaffe.Producer` handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message.
+`Kaffe.Producer` handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message. Kaffe automatically inserts a Kafka timestamp with each message.
 
 Configure your Kaffe Producer in your mix config
 
