@@ -30,9 +30,18 @@ defmodule Kaffe.Worker do
   def handle_cast({:process_messages, subscriber_pid, topic, partition, generation_id, messages},
       %{message_handler: message_handler} = state) do
 
-    :ok = apply(message_handler, :handle_messages, [messages])
-    offset = List.last(messages).offset
-    subscriber().ack_messages(subscriber_pid, topic, partition, generation_id, offset)
+    case apply(message_handler, :handle_messages, [messages]) do
+      :ok ->
+        offset = List.last(messages).offset
+        subscriber().commit_offsets(subscriber_pid, topic, partition, generation_id, offset)
+        subscriber().request_more_messages(subscriber_pid, offset)
+      {:ok, :no_commit} ->
+        offset = List.last(messages).offset
+        subscriber().request_more_messages(subscriber_pid, offset)
+      {:ok, offset} ->
+        subscriber().commit_offsets(subscriber_pid, topic, partition, generation_id, offset)
+        subscriber().request_more_messages(subscriber_pid, offset)
+    end
 
     {:noreply, state}
   end

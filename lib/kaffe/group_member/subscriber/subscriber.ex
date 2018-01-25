@@ -1,7 +1,7 @@
 defmodule Kaffe.Subscriber do
   @moduledoc """
   Consume messages from a single partition of a single Kafka topic.
-  
+
   Assignments are received from a group consumer member, `Kaffe.GroupMember`.
 
   Messages are delegated to `Kaffe.Worker`. The worker is expected to cast back
@@ -46,8 +46,12 @@ defmodule Kaffe.Subscriber do
     GenServer.stop(subscriber_pid)
   end
 
-  def ack_messages(subscriber_pid, topic, partition, generation_id, offset) do
-    GenServer.cast(subscriber_pid, {:ack_messages, topic, partition, generation_id, offset})
+  def commit_offset(subscriber_pid, topic, partition, generation_id, offset) do
+    GenServer.cast(subscriber_pid, {:commit_offset, topic, partition, generation_id, offset})
+  end
+
+  def request_more_messages(subscriber_pid, offset) do
+    GenServer.cast(subscriber_pid, {:request_more_messages, offset})
   end
 
   def init([subscriber_name, group_coordinator_pid, worker_pid,
@@ -100,9 +104,8 @@ defmodule Kaffe.Subscriber do
     {:noreply, state}
   end
 
-  def handle_cast({:ack_messages, topic, partition, generation_id, offset}, state) do
-
-    Logger.debug "Ready to ack messages of #{state.topic} / #{state.partition} / #{generation_id} at offset: #{offset}"
+  def handle_cast({:commit_offset, topic, partition, generation_id, offset}, state) do
+    Logger.debug "Ready to commit offsets for #{state.topic} / #{state.partition} / #{generation_id} at offset: #{offset}"
 
     # Is this the ack we're looking for?
     ^topic = state.topic
@@ -112,12 +115,17 @@ defmodule Kaffe.Subscriber do
     # Update the offsets in the group
     :ok = group_coordinator().ack(state.group_coordinator_pid, state.gen_id,
         state.topic, state.partition, offset)
-    # Request more messages from the consumer
-    :ok = kafka().consume_ack(state.subscriber_pid, offset)
 
     {:noreply, state}
   end
 
+  def handle_cast({:request_more_messages, offset}, state) do
+    Logger.debug "Ready to consume more messages of #{state.topic} / #{state.partition} at offset: #{offset}. Offset has not been commited back"
+
+    :ok = kafka().consume_ack(state.subscriber_pid, offset)
+
+    {:noreply, state}
+  end
   defp handle_subscribe({:ok, subscriber_pid}, state) do
     Logger.debug "Subscribe success: #{inspect subscriber_pid}"
     Process.monitor(subscriber_pid)
