@@ -86,31 +86,26 @@ Batch message consumers receive a list of messages and work as part of the `:bro
           # optional
           async_message_ack: false, # see "async message acknowledgement" below
           start_with_earliest_message: true # default false
+          ssl: [
+            certfile: '/etc/kafka/ssl/cert.pem',
+            keyfile: '/etc/kafka/ssl/key.pem',
+            cacertfile: '/etc/kafka/ssl/ca.pem'
+            # See http://erlang.org/doc/man/ssl.html for other options
+          ]
         ],
       ```
 
     The `start_with_earliest_message` field controls where your consumer group starts when it starts for the very first time. Once offsets have been committed to Kafka then they will supercede this option. If omitted then your consumer group will start processing from the most recent messages in the topic instead of consuming all available messages.
 
+
     ### Heroku Configuration
 
-    To configure a Kaffe Consumer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
+    To configure a Kaffe Consumer for a Heroku Kafka compatible environment, set the following OS environment variables:
 
-    ```elixir
-    config :kaffe,
-      consumer: [
-        heroku_kafka_env: true,
-        topics: ["interesting-topic"],
-        consumer_group: "your-app-consumer-group",
-        message_handler: MessageProcessor
-      ]
-    ```
-
-    With that setting in place Kaffe will automatically pull required info from the following ENV variables:
-
-    - `KAFKA_URL`
-    - `KAFKA_CLIENT_CERT`
-    - `KAFKA_CLIENT_CERT_KEY`
-    - `KAFKA_TRUSTED_CERT` (not used yet)
+    - `KAFKA_URL`: `kafka://host:port` (default port 9092) or `kafka+ssl://host:port` (default port 9093)
+    - `KAFKA_CLIENT_CERT`: PEM encoded client certificate
+    - `KAFKA_CLIENT_CERT_KEY`: PEM encoded client private key
+    - `KAFKA_TRUSTED_CERT`: PEM encoded CA cert(s)
 
 3. Add `Kaffe.Consumer` as a worker in your supervision tree
 
@@ -239,6 +234,12 @@ Configure your Kaffe Producer in your mix config
 
           # optional
           partition_strategy: :md5
+          ssl: [
+            certfile: '/etc/kafka/ssl/cert.pem',
+            keyfile: '/etc/kafka/ssl/key.pem',
+            cacertfile: '/etc/kafka/ssl/ca.pem'
+            # See http://erlang.org/doc/man/ssl.html for other options
+          ]
         ]
       ```
 
@@ -252,25 +253,12 @@ You can also set any of the Brod producer configuration options in the `producer
 
 ### Heroku Configuration
 
-To configure a Kaffe Producer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
+To configure a Kaffe Consumer for a Heroku Kafka compatible environment, set the following OS environment variables:
 
-    ```elixir
-    config :kaffe,
-      producer: [
-        heroku_kafka_env: true,
-        topics: ["kafka-topic"],
-
-        # optional
-        partition_strategy: :md5
-      ]
-    ```
-
-With that setting in place Kaffe will automatically pull required info from the following ENV variables:
-
-    - `KAFKA_URL`
-    - `KAFKA_CLIENT_CERT`
-    - `KAFKA_CLIENT_CERT_KEY`
-    - `KAFKA_TRUSTED_CERT`
+- `KAFKA_URL`: `kafka://host:port` (default port 9092) or `kafka+ssl://host:port` (default port 9093)
+- `KAFKA_CLIENT_CERT`: PEM encoded client certificate
+- `KAFKA_CLIENT_CERT_KEY`: PEM encoded client private key
+- `KAFKA_TRUSTED_CERT`: PEM encoded CA cert(s)
 
 ### Producing to Kafka
 

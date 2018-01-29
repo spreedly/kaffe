@@ -27,6 +27,7 @@ defmodule Kaffe.Mixfile do
     [
       {:brod, "~> 3.0"},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
+      {:meck, "~> 0.8.8", only: :test, runtime: false},
     ]
   end
 

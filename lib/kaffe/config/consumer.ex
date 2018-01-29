@@ -28,12 +28,7 @@ defmodule Kaffe.Config.Consumer do
 
   def async_message_ack, do: config_get(:async_message_ack, false)
 
-  def endpoints do
-    case heroku_kafka?() do
-      true -> Kaffe.Config.heroku_kafka_endpoints()
-      false -> config_get!(:endpoints)
-    end
-  end
+  def endpoints, do: Kaffe.Config.endpoints(config())
 
   def consumer_group_config do
     [
@@ -59,8 +54,7 @@ defmodule Kaffe.Config.Consumer do
   end
 
   def client_consumer_config do
-    default_client_consumer_config()
-    ++ maybe_heroku_kafka_ssl()
+    default_client_consumer_config() ++ Kaffe.Config.ssl(config())
   end
 
   def default_client_consumer_config do
@@ -72,9 +66,10 @@ defmodule Kaffe.Config.Consumer do
   end
 
   def begin_offset do
-    case config_get(:start_with_earliest_message, false) do
-      true -> :earliest
-      false -> -1
+    if config_get(:start_with_earliest_message, false) do
+      :earliest
+    else
+      -1
     end
   end
 
@@ -86,24 +81,10 @@ defmodule Kaffe.Config.Consumer do
     config_get(:worker_allocation_strategy, :worker_per_partition)
   end
 
-  def maybe_heroku_kafka_ssl do
-    case heroku_kafka?() do
-      true -> Kaffe.Config.ssl_config()
-      false -> []
-    end
-  end
+  def config, do: Application.get_env(:kaffe, :consumer)
 
-  def heroku_kafka? do
-    config_get(:heroku_kafka_env, false)
-  end
+  def config_get!(key), do: Keyword.fetch!(config(), key)
 
-  def config_get!(key) do
-    Application.get_env(:kaffe, :consumer)
-    |> Keyword.fetch!(key)
-  end
+  def config_get(key, default), do: Keyword.get(config(), key, default)
 
-  def config_get(key, default) do
-    Application.get_env(:kaffe, :consumer)
-    |> Keyword.get(key, default)
-  end
 end
