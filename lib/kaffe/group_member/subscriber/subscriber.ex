@@ -46,8 +46,8 @@ defmodule Kaffe.Subscriber do
     GenServer.stop(subscriber_pid)
   end
 
-  def commit_offset(subscriber_pid, topic, partition, generation_id, offset) do
-    GenServer.cast(subscriber_pid, {:commit_offset, topic, partition, generation_id, offset})
+  def commit_offsets(subscriber_pid, topic, partition, generation_id, offset) do
+    GenServer.cast(subscriber_pid, {:commit_offsets, topic, partition, generation_id, offset})
   end
 
   def request_more_messages(subscriber_pid, offset) do
@@ -104,7 +104,7 @@ defmodule Kaffe.Subscriber do
     {:noreply, state}
   end
 
-  def handle_cast({:commit_offset, topic, partition, generation_id, offset}, state) do
+  def handle_cast({:commit_offsets, topic, partition, generation_id, offset}, state) do
     Logger.debug "Ready to commit offsets for #{state.topic} / #{state.partition} / #{generation_id} at offset: #{offset}"
 
     # Is this the ack we're looking for?
