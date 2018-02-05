@@ -24,6 +24,7 @@ defmodule Kaffe.Config.ConsumerTest do
           auto_start_producers: false,
           allow_topic_auto_creation: false,
           begin_offset: :earliest,
+          size_stat_window: 5
         ],
         message_handler: SilentMessage,
         async_message_ack: false,
