@@ -68,6 +68,7 @@ defmodule Kaffe.Config.Consumer do
       auto_start_producers: false,
       allow_topic_auto_creation: false,
       begin_offset: begin_offset(),
+      size_stat_window: config_get(:size_stat_window, 5)
     ]
   end
 
