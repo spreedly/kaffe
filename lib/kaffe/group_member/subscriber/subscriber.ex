@@ -13,6 +13,9 @@ defmodule Kaffe.Subscriber do
   The subscriber reads the following options out of the configuration:
 
       - `max_bytes` - The maximum number of message bytes to receive in a batch
+      - `min_bytes` - The minimum number of message bytes to receive in a batch
+      - `max_wait_time` - Maximum number of milliseconds broker will wait for `:min_bytes` of messages
+          to be collected
       - `offset_reset_policy` - The native `auto.offset.reset` option,
           either `:reset_to_earliest` or `:reset_to_latest`.
 
@@ -164,6 +167,8 @@ defmodule Kaffe.Subscriber do
 
   defp subscriber_ops do
     [max_bytes: Kaffe.Config.Consumer.configuration.max_bytes,
+     min_bytes: Kaffe.Config.Consumer.configuration.min_bytes,
+     max_wait_time: Kaffe.Config.Consumer.configuration.max_wait_time,
      offset_reset_policy: Kaffe.Config.Consumer.configuration.offset_reset_policy]
   end
 

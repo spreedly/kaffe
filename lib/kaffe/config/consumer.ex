@@ -11,6 +11,8 @@ defmodule Kaffe.Config.Consumer do
       async_message_ack: async_message_ack(),
       rebalance_delay_ms: rebalance_delay_ms(),
       max_bytes: max_bytes(),
+      min_bytes: min_bytes(),
+      max_wait_time: max_wait_time(),
       subscriber_retries: subscriber_retries(),
       subscriber_retry_delay_ms: subscriber_retry_delay_ms(),
       offset_reset_policy: offset_reset_policy(),
@@ -48,6 +50,14 @@ defmodule Kaffe.Config.Consumer do
 
   def max_bytes do
    config_get(:max_bytes, 1_000_000)
+  end
+
+  def min_bytes do
+   config_get(:min_bytes, 0)
+  end
+
+  def max_wait_time do
+   config_get(:max_wait_time, 10_000)
   end
 
   def subscriber_retries do
