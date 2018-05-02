@@ -155,6 +155,12 @@ Batch message consumers receive a list of messages and work as part of the `:bro
       with 32 partitions, there is the potential of 64MB in buffered
       messages at any one time.
 
+      `:min_bytes` Sets a minimum threshold for the number of
+       bytes to fetch for a batch of messages. The default is 0MB.
+
+      `:max_wait_time` Sets the maximum number of milliseconds that the
+      broker is allowed to collect min_bytes of messages in a batch of messages
+
       `:offset_reset_policy` controls how the subscriber handles an
       expired offset. See the Kafka consumer option,
       [`auto.offset.reset`](https://kafka.apache.org/documentation/#newconsumerconfigs).
