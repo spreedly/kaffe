@@ -15,7 +15,7 @@ defmodule Kaffe.GroupMember do
 
   Also: https://github.com/klarna/brucke/blob/master/src/brucke_member.erl
 
-  The `brod_group_member` behavior is used. 
+  The `brod_group_member` behavior is used.
   """
 
   use GenServer
@@ -44,7 +44,7 @@ defmodule Kaffe.GroupMember do
 
     :ok = kafka().start_consumer(subscriber_name, topic, [])
     {:ok, pid} = group_coordinator().start_link(subscriber_name, consumer_group,
-      [topic], _group_config = [], __MODULE__, self())
+      [topic], group_config(), __MODULE__, self())
 
     Logger.info "event#init=#{__MODULE__} group_coordinator=#{inspect pid} subscriber_name=#{subscriber_name} consumer_group=#{consumer_group}"
 
@@ -145,6 +145,10 @@ defmodule Kaffe.GroupMember do
 
   defp rebalance_delay do
     Kaffe.Config.Consumer.configuration.rebalance_delay_ms
+  end
+
+  defp group_config do
+    Kaffe.Config.Consumer.configuration.group_config
   end
 
   defp kafka do
