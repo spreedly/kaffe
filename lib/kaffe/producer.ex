@@ -93,6 +93,21 @@ defmodule Kaffe.Producer do
     @kafka.produce_sync(client_name(), topic, partition, key, value)
   end
 
+  @doc """
+  Synchronously produce the `messages` to `topic`, with a specific partitioning strategy
+
+  `messages` must be a list of `{key, value}` tuples
+  `strategy`must be one of `:md5`, '`:random`, or a function
+
+  Returns:
+
+       * `:ok` on successfully producing each message
+       * `{:error, reason}` for any error
+  """
+  def produce_sync_with_strategy(topic, message_list, strategy) when is_list(message_list) do
+    produce_list(topic, message_list, strategy)
+  end
+
   ## -------------------------------------------------------------------------
   ## internal
   ## -------------------------------------------------------------------------
