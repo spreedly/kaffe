@@ -7,6 +7,10 @@ defmodule Kaffe.GroupMemberSupervisor do
 
   require Logger
 
+  def start_link(_) do
+    start_link()
+  end
+
   def start_link do
     Supervisor.start_link(__MODULE__, :ok, name: name())
   end

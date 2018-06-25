@@ -193,9 +193,17 @@ Batch message consumers receive a list of messages and work as part of the `:bro
   3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your
      supervision tree
 
-       ```elixir
-       supervisor(Kaffe.GroupMemberSupervisor, [])
-       ```
+      ```elixir
+      def start(_type, _args) do
+
+        children = [
+          Kaffe.GroupMemberSupervisor
+        ]
+
+        opts = [strategy: :one_for_all, name: MyApp.Supervisor]
+        Supervisor.start_link(children, opts)
+      end
+      ```
 
 ### async message acknowledgement
 
