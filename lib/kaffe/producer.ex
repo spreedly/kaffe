@@ -32,7 +32,23 @@ defmodule Kaffe.Producer do
   end
 
   @doc """
-  Synchronously produce the `messages` to `topic`
+  Synchronously produce the `messages_list` to `topic`
+
+  - `messages_list` must be a list of `{key, value}` tuples
+  - `opts` may include the partition strategy to use,
+    `partition_strategy: :md5`, or `:random` or a function.
+
+  Returns:
+
+       * `:ok` on successfully producing each message
+       * `{:error, reason}` for any error
+  """
+  def produce(topic, message_list, opts \\ []) do
+    produce_list(topic, message_list, partition_strategy_from(opts))
+  end
+
+  @doc """
+  Synchronously produce the `message_list` to `topic`
 
   `messages` must be a list of `{key, value}` tuples
 
@@ -58,7 +74,7 @@ defmodule Kaffe.Producer do
   """
   def produce_sync(key, value) do
     topic = config().topics |> List.first
-    produce(topic, key, value)
+    produce_value(topic, key, value)
   end
 
   @doc """
@@ -81,7 +97,7 @@ defmodule Kaffe.Producer do
   See `produce_sync/2` for returns.
   """
   def produce_sync(topic, key, value) do
-    produce(topic, key, value)
+    produce_value(topic, key, value)
   end
 
   @doc """
@@ -91,21 +107,6 @@ defmodule Kaffe.Producer do
   """
   def produce_sync(topic, partition, key, value) do
     @kafka.produce_sync(client_name(), topic, partition, key, value)
-  end
-
-  @doc """
-  Synchronously produce the `messages` to `topic`, with a specific partitioning strategy
-
-  `messages` must be a list of `{key, value}` tuples
-  `strategy`must be one of `:md5`, '`:random`, or a function
-
-  Returns:
-
-       * `:ok` on successfully producing each message
-       * `{:error, reason}` for any error
-  """
-  def produce_sync_with_strategy(topic, message_list, strategy) when is_list(message_list) do
-    produce_list(topic, message_list, strategy)
   end
 
   ## -------------------------------------------------------------------------
@@ -120,7 +121,7 @@ defmodule Kaffe.Producer do
     |> produce_list_to_topic(topic)
   end
 
-  defp produce(topic, key, value) do
+  defp produce_value(topic, key, value) do
     {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
     partition = choose_partition(topic, partitions_count, key, value, global_partition_strategy())
     Logger.debug "event#produce topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
@@ -151,6 +152,13 @@ defmodule Kaffe.Producer do
         {:error, _reason} = error -> {:halt, error}
       end
     end)
+  end
+
+  defp partition_strategy_from(opts) do
+    case Keyword.fetch(opts, :partition_strategy) do
+      {:ok, partition_strategy} -> partition_strategy
+      :error -> global_partition_strategy()
+    end
   end
 
   defp choose_partition(_topic, partitions_count, _key, _value, :random) do
