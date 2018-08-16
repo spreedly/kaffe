@@ -13,7 +13,7 @@ defmodule Kaffe.Config.ProducerTest do
             ack_timeout: 1000,
             partition_buffer_limit: 512,
             partition_onwire_limit: 1,
-            max_batch_size: 1048576,
+            max_batch_size: 1_048_576,
             max_retries: 3,
             retry_backoff_ms: 500,
             compression: :no_compression,
@@ -22,10 +22,10 @@ defmodule Kaffe.Config.ProducerTest do
         ],
         topics: ["kaffe-test"],
         client_name: :kaffe_producer_client,
-        partition_strategy: :md5,
+        partition_strategy: :md5
       }
 
-      assert Kaffe.Config.Producer.configuration == expected
+      assert Kaffe.Config.Producer.configuration() == expected
     end
   end
 end

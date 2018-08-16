@@ -22,12 +22,11 @@ defmodule Kaffe.PartitionSelectorTest do
 
   describe "md5/2" do
     test "computes the remainder of an md5 hash of the key" do
-
       assert PartitionSelector.md5("key1", 10) == PartitionSelector.md5("key1", 10),
-        "Partition should be deterministic"
+             "Partition should be deterministic"
 
       assert PartitionSelector.md5("key1", 10) != PartitionSelector.md5("key2", 10),
-        "Partition should not be fixed"
+             "Partition should not be fixed"
     end
   end
 end

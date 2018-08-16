@@ -18,11 +18,14 @@ defmodule Kaffe.WorkerManager do
 
   The table of workers is stored in an ETS table, `:kaffe_workers`.
   """
-  
+
   use GenServer
 
   require Logger
 
+  ## ==========================================================================
+  ## Public API
+  ## ==========================================================================
   def start_link(subscriber_name) do
     GenServer.start_link(__MODULE__, [self(), subscriber_name], name: name(subscriber_name))
   end
@@ -31,26 +34,34 @@ defmodule Kaffe.WorkerManager do
     GenServer.call(pid, {:worker_for, topic, partition})
   end
 
+  ## ==========================================================================
   ## Callbacks
-
+  ## ==========================================================================
   def init([supervisor_pid, subscriber_name]) do
-    Logger.info "event#starting=#{__MODULE__} subscriber_name=#{subscriber_name} supervisor=#{inspect supervisor_pid}"
+    Logger.info("event#starting=#{__MODULE__} subscriber_name=#{subscriber_name} supervisor=#{inspect(supervisor_pid)}")
 
     worker_table = :ets.new(:kaffe_workers, [:set, :protected])
 
-    {:ok, %{supervisor_pid: supervisor_pid, subscriber_name: subscriber_name, worker_table: worker_table}}
+    {:ok,
+     %{
+       supervisor_pid: supervisor_pid,
+       subscriber_name: subscriber_name,
+       worker_table: worker_table
+     }}
   end
-  
+
   def handle_call({:worker_for, topic, partition}, _from, state) do
-    Logger.debug "Allocating worker: #{topic} / #{partition}"
+    Logger.debug("Allocating worker: #{topic} / #{partition}")
     worker_pid = allocate_worker(topic, partition, state)
     {:reply, worker_pid, state}
   end
 
-  ## Private
-
+  ## ==========================================================================
+  ## Helpers
+  ## ==========================================================================
   defp allocate_worker(topic, partition, %{worker_table: worker_table} = state) do
     worker_name = worker_name(topic, partition)
+
     case :ets.lookup(worker_table, worker_name) do
       [{^worker_name, worker_pid}] -> worker_pid
       [] -> start_worker(worker_name, state)
@@ -58,10 +69,15 @@ defmodule Kaffe.WorkerManager do
   end
 
   defp start_worker(worker_name, state) do
-    config = Kaffe.Config.Consumer.configuration
-    Logger.debug "Creating worker: #{worker_name}"
-    worker_supervisor().start_worker(state.supervisor_pid, config.message_handler,
-      state.subscriber_name, worker_name)
+    config = Kaffe.Config.Consumer.configuration()
+    Logger.debug("Creating worker: #{worker_name}")
+
+    worker_supervisor().start_worker(
+      state.supervisor_pid,
+      config.message_handler,
+      state.subscriber_name,
+      worker_name
+    )
     |> capture_worker(worker_name, state)
   end
 
@@ -76,9 +92,9 @@ defmodule Kaffe.WorkerManager do
       :worker_per_topic_partition -> :"worker_#{topic}_#{partition}"
     end
   end
-  
+
   defp worker_allocation_strategy do
-    Kaffe.Config.Consumer.configuration.worker_allocation_strategy
+    Kaffe.Config.Consumer.configuration().worker_allocation_strategy
   end
 
   defp worker_supervisor do
@@ -86,7 +102,6 @@ defmodule Kaffe.WorkerManager do
   end
 
   defp name(subscriber_name) do
-    :"kaffe_worker_manager_#{subscriber_name}"
+    :"#{__MODULE__}.#{subscriber_name}"
   end
-
 end

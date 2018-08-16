@@ -62,14 +62,17 @@ defmodule Kaffe.Consumer do
   take on the burden of ensuring no messages are lost.
   """
   def start_link do
-    config = Kaffe.Config.Consumer.configuration
-    @kafka.start_link_group_subscriber(config.subscriber_name,
-                                       config.consumer_group,
-                                       config.topics,
-                                       config.group_config,
-                                       config.consumer_config,
-                                       __MODULE__,
-                                       [config])
+    config = Kaffe.Config.Consumer.configuration()
+
+    @kafka.start_link_group_subscriber(
+      config.subscriber_name,
+      config.consumer_group,
+      config.topics,
+      config.group_config,
+      config.consumer_config,
+      __MODULE__,
+      [config]
+    )
   end
 
   @doc """
@@ -96,7 +99,12 @@ defmodule Kaffe.Consumer do
   """
   def init(_consumer_group, [config]) do
     start_consumer_client(config)
-    {:ok, %Kaffe.Consumer.State{message_handler: config.message_handler, async: config.async_message_ack}}
+
+    {:ok,
+     %Kaffe.Consumer.State{
+       message_handler: config.message_handler,
+       async: config.async_message_ack
+     }}
   end
 
   @doc """
