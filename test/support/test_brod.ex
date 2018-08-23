@@ -10,7 +10,15 @@ defmodule TestBrod do
     :ok
   end
 
-  def start_link_group_subscriber(_client, _consumer_group, _topics, _group_config, _consumer_config, _handler, _init_args) do
+  def start_link_group_subscriber(
+        _client,
+        _consumer_group,
+        _topics,
+        _group_config,
+        _consumer_config,
+        _handler,
+        _init_args
+      ) do
     {:ok, Process.whereis(TestBrod)}
   end
 
@@ -29,11 +37,11 @@ defmodule TestBrod do
   end
 
   def handle_call({:produce_sync, topic, partition, key, value}, _from, state) do
-    send :test_case, [:produce_sync, topic, partition, key, value]
+    send(:test_case, [:produce_sync, topic, partition, key, value])
     {:reply, state.produce_response, state}
   end
+
   def handle_call({:set_produce_response, response}, _from, state) do
     {:reply, response, %{state | produce_response: response}}
   end
-
 end

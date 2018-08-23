@@ -1,5 +1,4 @@
 defmodule Kaffe.SubscriberTest do
-
   use ExUnit.Case
 
   require Kaffe.Subscriber
@@ -7,28 +6,33 @@ defmodule Kaffe.SubscriberTest do
 
   defmodule TestKafka do
     use GenServer
+
     def start_link(failures) do
       GenServer.start_link(__MODULE__, failures, name: __MODULE__)
     end
+
     def init(failures) do
       {:ok, %{failures: failures}}
     end
+
     def subscribe(_subscriber_name, _subscriber_pid, _topic, _partition, _ops) do
       GenServer.call(__MODULE__, {:subscribe})
     end
+
     def handle_call({:subscribe}, _from, %{failures: failures} = state) when failures > 0 do
-      send :test_case, {:subscribe, {:error, :no_available_offsets}}
-      {:reply, {:error, :no_available_offsets}, %{state | failures: (failures - 1)}}
+      send(:test_case, {:subscribe, {:error, :no_available_offsets}})
+      {:reply, {:error, :no_available_offsets}, %{state | failures: failures - 1}}
     end
+
     def handle_call({:subscribe}, _from, state) do
-      send :test_case, {:subscribe, {:ok, self()}}
+      send(:test_case, {:subscribe, {:ok, self()}})
       {:reply, {:ok, self()}, state}
     end
   end
 
   defmodule TestWorker do
     def process_messages(_pid, _subscriber_pid, _topic, _partition, _generation_id, _messages) do
-      send :test_case, {:process_messages}
+      send(:test_case, {:process_messages})
     end
   end
 
@@ -38,7 +42,6 @@ defmodule Kaffe.SubscriberTest do
   end
 
   test "handle message set" do
-
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
@@ -50,24 +53,28 @@ defmodule Kaffe.SubscriberTest do
   end
 
   test "handle kafka_fetch_error" do
-
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
     {:ok, pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [])
     Process.unlink(pid)
     Process.monitor(pid)
-    send(pid, {self(), {:kafka_fetch_error, "topic", 1,
-      :NotLeaderForPartition, "This server is not the leader for that topic-partition."}})
+
+    send(
+      pid,
+      {self(),
+       {:kafka_fetch_error, "topic", 1, :NotLeaderForPartition,
+        "This server is not the leader for that topic-partition."}}
+    )
 
     assert_receive {:subscribe, {:ok, ^kafka_pid}}
     refute_receive {:process_messages}
+
     assert_receive {:DOWN, _ref, :process, ^pid,
-      {:shutdown, {:kafka_fetch_error, "topic", 1, :NotLeaderForPartition, _reason}}}
+                    {:shutdown, {:kafka_fetch_error, "topic", 1, :NotLeaderForPartition, _reason}}}
   end
 
   test "handle consumer down" do
-
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
@@ -82,7 +89,6 @@ defmodule Kaffe.SubscriberTest do
   end
 
   test "handle recovered subscribe failure" do
-
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(1)
 
@@ -93,7 +99,6 @@ defmodule Kaffe.SubscriberTest do
   end
 
   test "handle complete subscribe failure" do
-
     Process.register(self(), :test_case)
 
     Process.flag(:trap_exit, true)
@@ -113,7 +118,7 @@ defmodule Kaffe.SubscriberTest do
   end
 
   defp build_message_list do
-    Enum.map(1..10, fn (n) ->
+    Enum.map(1..10, fn n ->
       Subscriber.kafka_message(
         offset: n,
         magic_byte: 0,

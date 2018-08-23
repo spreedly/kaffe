@@ -4,6 +4,7 @@ defmodule Kaffe.ConfigTest do
   describe "heroku_kafka_endpoints/1" do
     test "transforms endpoints into the correct format" do
       kafka_url = "kafka+ssl://192.168.1.100:9096,kafka+ssl://192.168.1.101:9096,kafka+ssl://192.168.1.102:9096"
+
       expected = [{:"192.168.1.100", 9096}, {:"192.168.1.101", 9096}, {:"192.168.1.102", 9096}]
 
       assert Kaffe.Config.heroku_kafka_endpoints(kafka_url) == expected
@@ -18,12 +19,13 @@ defmodule Kaffe.ConfigTest do
     test "ssl_config returns Erlang SSL module config with cert and key" do
       client_cert = "not really a cert"
       client_cert_key = "not really a cert key"
+
       assert Kaffe.Config.ssl_config(client_cert, client_cert_key) == [
-        ssl: [
-          cert: client_cert,
-          key: client_cert_key,
-        ]
-      ]
+               ssl: [
+                 cert: client_cert,
+                 key: client_cert_key
+               ]
+             ]
     end
   end
 end

@@ -4,7 +4,6 @@ defmodule Kaffe.WorkerSupervisor do
   """
 
   use Supervisor
-
   require Logger
 
   def start_link(subscriber_name) do
@@ -16,17 +15,20 @@ defmodule Kaffe.WorkerSupervisor do
   end
 
   def start_worker(pid, message_handler, subscriber_name, worker_name) do
-    Logger.debug "Starting worker: #{worker_name}"
-    Supervisor.start_child(pid,
+    Logger.debug("Starting worker: #{worker_name}")
+
+    Supervisor.start_child(
+      pid,
       worker(Kaffe.Worker, [message_handler, subscriber_name, worker_name],
-        id: :"worker_#{subscriber_name}_#{worker_name}"))
+        id: :"worker_#{subscriber_name}_#{worker_name}"
+      )
+    )
   end
 
   def init(subscriber_name) do
-    Logger.info "event#startup=#{__MODULE__} subscriber_name=#{subscriber_name}"
+    Logger.info("event#startup=#{__MODULE__} subscriber_name=#{subscriber_name}")
 
-    children = [
-    ]
+    children = []
 
     # If anything fails, the state is inconsistent with the state of
     # `Kaffe.Subscriber` and `Kaffe.GroupMember`. We need the failure
@@ -35,7 +37,6 @@ defmodule Kaffe.WorkerSupervisor do
   end
 
   defp name(subscriber_name) do
-    :"worker_supervisor_#{subscriber_name}"
+    :"#{__MODULE__}.#{subscriber_name}"
   end
-
 end

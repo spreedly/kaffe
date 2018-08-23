@@ -5,7 +5,7 @@ defmodule Kaffe.Config.Producer do
       producer_config: client_producer_config(),
       client_name: config_get(:client_name, :kaffe_producer_client),
       topics: producer_topics(),
-      partition_strategy: config_get(:partition_strategy, :md5),
+      partition_strategy: config_get(:partition_strategy, :md5)
     }
   end
 
@@ -19,8 +19,7 @@ defmodule Kaffe.Config.Producer do
   end
 
   def client_producer_config do
-    default_client_producer_config()
-    ++ maybe_heroku_kafka_ssl()
+    default_client_producer_config() ++ maybe_heroku_kafka_ssl()
   end
 
   def maybe_heroku_kafka_ssl do
@@ -39,7 +38,7 @@ defmodule Kaffe.Config.Producer do
         ack_timeout: config_get(:ack_timeout, 1000),
         partition_buffer_limit: config_get(:partition_buffer_limit, 512),
         partition_onwire_limit: config_get(:partition_onwire_limit, 1),
-        max_batch_size: config_get(:max_batch_size, 1048576),
+        max_batch_size: config_get(:max_batch_size, 1_048_576),
         max_retries: config_get(:max_retries, 3),
         retry_backoff_ms: config_get(:retry_backoff_ms, 500),
         compression: config_get(:compression, :no_compression),

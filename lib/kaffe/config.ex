@@ -1,7 +1,7 @@
 defmodule Kaffe.Config do
   def heroku_kafka_endpoints do
     "KAFKA_URL"
-    |> System.get_env
+    |> System.get_env()
     |> heroku_kafka_endpoints
   end
 
@@ -15,14 +15,14 @@ defmodule Kaffe.Config do
 
   def url_endpoint_to_tuple(endpoint) do
     [ip, port] = endpoint |> String.split(":")
-    {ip |> String.to_atom, port |> String.to_integer}
+    {ip |> String.to_atom(), port |> String.to_integer()}
   end
 
   def ssl_config do
     ssl_config(client_cert(), client_cert_key())
   end
 
-  def ssl_config(_client_cert=nil, _client_cert_key=nil) do
+  def ssl_config(_client_cert = nil, _client_cert_key = nil) do
     []
   end
 
@@ -30,7 +30,7 @@ defmodule Kaffe.Config do
     [
       ssl: [
         cert: client_cert,
-        key: client_cert_key,
+        key: client_cert_key
       ]
     ]
   end
@@ -51,8 +51,8 @@ defmodule Kaffe.Config do
 
   def decode_pem(pem) do
     pem
-    |> :public_key.pem_decode
-    |> List.first
+    |> :public_key.pem_decode()
+    |> List.first()
   end
 
   def extract_der(cert) do
