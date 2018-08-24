@@ -30,8 +30,8 @@ defmodule Kaffe.PartitionSelector do
 
   def md5(key, total) do
     :crypto.hash(:md5, key)
-    |> :binary.bin_to_list
-    |> Enum.sum
+    |> :binary.bin_to_list()
+    |> Enum.sum()
     |> rem(total)
   end
 end

@@ -1,3 +1,3 @@
 ExUnit.start()
 
-ExUnit.configure exclude: [:e2e]
+ExUnit.configure(exclude: [:e2e])

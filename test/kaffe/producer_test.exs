@@ -12,7 +12,6 @@ defmodule Kaffe.ProducerTest do
   end
 
   describe "produce_sync" do
-
     test "(key, value) produces a message to the first configured topic" do
       :ok = Producer.produce_sync("key8", "value")
       assert_receive [:produce_sync, "topic", 17, "key8", "value"]
@@ -20,21 +19,21 @@ defmodule Kaffe.ProducerTest do
 
     test "(topic, message_list) produces messages to the specific topic" do
       :ok = Producer.produce_sync("topic2", [{"key8", "value1"}, {"key12", "value2"}])
-      assert_receive [:produce_sync, "topic2", 17, "ignored",
-        [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
+      assert_receive [:produce_sync, "topic2", 17, "ignored", [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
     end
 
     test "(topic, message_list, partition_strategy) produces messages to the specific topic" do
       :ok = Producer.produce("topic2", [{"key8", "value1"}, {"key12", "value2"}], partition_strategy: :md5)
-      assert_receive [:produce_sync, "topic2", 17, "ignored",
-        [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
+      assert_receive [:produce_sync, "topic2", 17, "ignored", [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
     end
 
     test "(topic, message_list, partition_strategy) produces messages to the specific topic and partition" do
-      :ok = Producer.produce("topic2", [{"key8", "value1"}, {"key12", "value2"}],
-        partition_strategy: fn (_topic, _partitions_count, _key, _value) -> 19 end)
-      assert_receive [:produce_sync, "topic2", 19, "ignored",
-        [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
+      :ok =
+        Producer.produce("topic2", [{"key8", "value1"}, {"key12", "value2"}],
+          partition_strategy: fn _topic, _partitions_count, _key, _value -> 19 end
+        )
+
+      assert_receive [:produce_sync, "topic2", 19, "ignored", [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
     end
 
     test "(topic, key, value) produces a message to the specific topic" do
@@ -51,8 +50,14 @@ defmodule Kaffe.ProducerTest do
     test "(topic, partition, key, message_list) produces a list of messages to the specific topic/parition" do
       partition = 99
       :ok = Producer.produce_sync("topic2", partition, [{"key8", "value1"}, {"key12", "value2"}])
-      assert_receive [:produce_sync, "topic2", ^partition, "ignored",
-        [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]]
+
+      assert_receive [
+        :produce_sync,
+        "topic2",
+        ^partition,
+        "ignored",
+        [{_ts1, "key8", "value1"}, {_ts2, "key12", "value2"}]
+      ]
     end
 
     test "passes through the result" do
@@ -62,24 +67,23 @@ defmodule Kaffe.ProducerTest do
   end
 
   describe "partition selection" do
-
     test "random" do
       update_producer_config(:partition_strategy, :random)
 
       :ok = Producer.produce_sync("topic2", "key", "value")
       assert_receive [:produce_sync, "topic2", random_partition, "key", "value"]
 
-      assert (0 <= random_partition) && (random_partition <= 32)
+      assert 0 <= random_partition && random_partition <= 32
 
       :ok = Producer.produce_sync("topic2", "key", "value")
       assert_receive [:produce_sync, "topic2", random_partition, "key", "value"]
 
-      assert (0 <= random_partition) && (random_partition <= 32)
+      assert 0 <= random_partition && random_partition <= 32
 
       :ok = Producer.produce_sync("topic2", "key", "value")
       assert_receive [:produce_sync, "topic2", random_partition, "key", "value"]
 
-      assert (0 <= random_partition) && (random_partition <= 32)
+      assert 0 <= random_partition && random_partition <= 32
     end
 
     test "md5" do
@@ -88,22 +92,23 @@ defmodule Kaffe.ProducerTest do
       :ok = Producer.produce_sync("topic2", "key1", "value")
       assert_receive [:produce_sync, "topic2", partition1, "key1", "value"]
 
-      assert (0 <= partition1) && (partition1 <= 32),
-        "The partition should be in the range"
+      assert 0 <= partition1 && partition1 <= 32,
+             "The partition should be in the range"
 
       :ok = Producer.produce_sync("topic2", "key1", "value")
+
       assert_receive [:produce_sync, "topic2", ^partition1, "key1", "value"],
-        "Should receive the same partition for the same key"
+                     "Should receive the same partition for the same key"
 
       :ok = Producer.produce_sync("topic2", "key2", "value")
       assert_receive [:produce_sync, "topic2", partition2, "key2", "value"]
 
       assert partition1 != partition2,
-        "Partitions should vary"
+             "Partitions should vary"
     end
 
     test "given function partition strategy" do
-      choose_partition = fn(topic, partitions_count, key, value) ->
+      choose_partition = fn topic, partitions_count, key, value ->
         assert topic == "topic"
         assert partitions_count == 32
         assert key == "key"

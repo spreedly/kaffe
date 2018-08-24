@@ -6,9 +6,9 @@ defmodule Kaffe.WorkerManagerTest do
   defmodule TestWorkerSupervisor do
     def start_worker(_, _, _, worker_name) do
       case worker_name do
-        :"worker_0" -> {:ok, 1}
-        :"worker_topic1_0" -> {:ok, 1}
-        :"worker_topic2_0" -> {:ok, 2}
+        :worker_0 -> {:ok, 1}
+        :worker_topic1_0 -> {:ok, 1}
+        :worker_topic2_0 -> {:ok, 2}
       end
     end
   end
@@ -16,7 +16,7 @@ defmodule Kaffe.WorkerManagerTest do
   setup do
     Application.put_env(:kaffe, :worker_supervisor_mod, TestWorkerSupervisor)
     {:ok, worker_manager_pid} = WorkerManager.start_link("worker_test")
-    on_exit fn -> configure_strategy(:worker_per_partition) end
+    on_exit(fn -> configure_strategy(:worker_per_partition) end)
     %{worker_manager_pid: worker_manager_pid}
   end
 
@@ -38,7 +38,6 @@ defmodule Kaffe.WorkerManagerTest do
 
   defp configure_strategy(strategy) do
     consumer_config = Application.get_env(:kaffe, :consumer)
-    Application.put_env(:kaffe, :consumer,
-        Keyword.put(consumer_config, :worker_allocation_strategy, strategy))
+    Application.put_env(:kaffe, :consumer, Keyword.put(consumer_config, :worker_allocation_strategy, strategy))
   end
 end

@@ -73,7 +73,7 @@ defmodule Kaffe.Producer do
        * `{:error, reason}` for any error
   """
   def produce_sync(key, value) do
-    topic = config().topics |> List.first
+    topic = config().topics |> List.first()
     produce_value(topic, key, value)
   end
 
@@ -114,7 +114,8 @@ defmodule Kaffe.Producer do
   ## -------------------------------------------------------------------------
 
   defp produce_list(topic, message_list, partition_strategy) when is_list(message_list) do
-    Logger.debug "event#produce_list topic=#{topic}"
+    Logger.debug("event#produce_list topic=#{topic}")
+
     message_list
     |> add_timestamp
     |> group_by_partition(topic, partition_strategy)
@@ -124,29 +125,35 @@ defmodule Kaffe.Producer do
   defp produce_value(topic, key, value) do
     {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
     partition = choose_partition(topic, partitions_count, key, value, global_partition_strategy())
-    Logger.debug "event#produce topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
+
+    Logger.debug(
+      "event#produce topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
+    )
+
     @kafka.produce_sync(client_name(), topic, partition, key, value)
   end
 
   defp add_timestamp(messages) do
     messages
-    |> Enum.map(fn ({key, message}) ->
+    |> Enum.map(fn {key, message} ->
       {System.system_time(:millisecond), key, message}
     end)
   end
 
   defp group_by_partition(messages, topic, partition_strategy) do
     {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
+
     messages
-    |> Enum.group_by(fn ({_timestamp, key, message}) ->
+    |> Enum.group_by(fn {_timestamp, key, message} ->
       choose_partition(topic, partitions_count, key, message, partition_strategy)
     end)
   end
 
   defp produce_list_to_topic(message_list, topic) do
     message_list
-    |> Enum.reduce_while(:ok, fn ({partition, messages}, :ok) ->
-      Logger.debug "event#produce_list_to_topic topic=#{topic} partition=#{partition}"
+    |> Enum.reduce_while(:ok, fn {partition, messages}, :ok ->
+      Logger.debug("event#produce_list_to_topic topic=#{topic} partition=#{partition}")
+
       case @kafka.produce_sync(client_name(), topic, partition, "ignored", messages) do
         :ok -> {:cont, :ok}
         {:error, _reason} = error -> {:halt, error}
@@ -182,6 +189,6 @@ defmodule Kaffe.Producer do
   end
 
   defp config do
-    Kaffe.Config.Producer.configuration
+    Kaffe.Config.Producer.configuration()
   end
 end

@@ -18,12 +18,13 @@ defmodule Kaffe.ConfigTest do
     test "ssl_config returns Erlang SSL module config with cert and key" do
       client_cert = "not really a cert"
       client_cert_key = "not really a cert key"
+
       assert Kaffe.Config.ssl_config(client_cert, client_cert_key) == [
-        ssl: [
-          cert: client_cert,
-          key: client_cert_key,
-        ]
-      ]
+               ssl: [
+                 cert: client_cert,
+                 key: client_cert_key
+               ]
+             ]
     end
   end
 end
