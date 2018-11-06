@@ -154,9 +154,7 @@ defmodule Kaffe.Subscriber do
   end
 
   def handle_cast({:commit_offsets, topic, partition, generation_id, offset}, state) do
-    Logger.debug(
-      "Ready to commit offsets for #{state.topic} / #{state.partition} / #{generation_id} at offset: #{offset}"
-    )
+    Logger.debug("event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{generation_id}")
 
     # Is this the ack we're looking for?
     ^topic = state.topic
@@ -177,9 +175,7 @@ defmodule Kaffe.Subscriber do
   end
 
   def handle_cast({:request_more_messages, offset}, state) do
-    Logger.debug(
-      "Ready to consume more messages of #{state.topic} / #{state.partition} at offset: #{offset}. Offset has not been commited back"
-    )
+    Logger.debug("event#request_more_messages topic=#{state.topic} partition=#{state.partition} offset=#{offset}")
 
     :ok = kafka().consume_ack(state.subscriber_pid, offset)
 
