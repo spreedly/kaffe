@@ -64,4 +64,19 @@ defmodule Kaffe.Config do
     {type, der_cert, _} = decode_pem(cert_key)
     {type, der_cert}
   end
+
+  def parse_endpoints(endpoints) when is_list(endpoints), do: endpoints
+
+  def parse_endpoints(endpoints) when is_binary(endpoints) do
+    endpoints
+    |> String.split(",")
+    |> Enum.map(fn endpoint ->
+      {hostname, port} =
+        endpoint
+        |> String.split(":")
+        |> List.to_tuple()
+
+      {String.to_atom(hostname), String.to_integer(port)}
+    end)
+  end
 end

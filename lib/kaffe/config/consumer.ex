@@ -1,4 +1,6 @@
 defmodule Kaffe.Config.Consumer do
+  import Kaffe.Config, only: [parse_endpoints: 1]
+
   def configuration do
     %{
       endpoints: endpoints(),
@@ -33,7 +35,7 @@ defmodule Kaffe.Config.Consumer do
   def endpoints do
     case heroku_kafka?() do
       true -> Kaffe.Config.heroku_kafka_endpoints()
-      false -> config_get!(:endpoints)
+      false -> parse_endpoints(config_get!(:endpoints))
     end
   end
 
