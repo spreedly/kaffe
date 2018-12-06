@@ -36,10 +36,9 @@ defmodule Kaffe.Config.ProducerTest do
     end
 
     test "correct settings with sasl plain are extracted" do
-      sasl_config =
-        :kaffe
-        |> Application.get_env(:producer)
-        |> Keyword.put(:sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
+      config = Application.get_env(:kaffe, :producer)
+      sasl = Keyword.get(config, :sasl)
+      sasl_config = Keyword.put(config, :sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
 
       Application.put_env(:kaffe, :producer, sasl_config)
 
@@ -66,7 +65,45 @@ defmodule Kaffe.Config.ProducerTest do
         partition_strategy: :md5
       }
 
+      on_exit(fn ->
+        Application.put_env(:kaffe, :producer, Keyword.put(config, :sasl, sasl))
+      end)
+
       assert Kaffe.Config.Producer.configuration() == expected
     end
+  end
+
+  test "string endpoints parsed correctly" do
+    config = Application.get_env(:kaffe, :producer)
+    endpoints = Keyword.get(config, :endpoints)
+    Application.put_env(:kaffe, :producer, Keyword.put(config, :endpoints, "kafka:9092,localhost:9092"))
+
+    expected = %{
+      endpoints: [kafka: 9092, localhost: 9092],
+      producer_config: [
+        auto_start_producers: true,
+        allow_topic_auto_creation: false,
+        default_producer_config: [
+          required_acks: -1,
+          ack_timeout: 1000,
+          partition_buffer_limit: 512,
+          partition_onwire_limit: 1,
+          max_batch_size: 1_048_576,
+          max_retries: 3,
+          retry_backoff_ms: 500,
+          compression: :no_compression,
+          min_compression_batch_size: 1024
+        ]
+      ],
+      topics: ["kaffe-test"],
+      client_name: :kaffe_producer_client,
+      partition_strategy: :md5
+    }
+
+    on_exit(fn ->
+      Application.put_env(:kaffe, :producer, Keyword.put(config, :endpoints, endpoints))
+    end)
+
+    assert Kaffe.Config.Producer.configuration() == expected
   end
 end
