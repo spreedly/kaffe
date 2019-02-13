@@ -19,7 +19,14 @@ defmodule Kaffe.Config.Producer do
   end
 
   def client_producer_config do
-    default_client_producer_config() ++ maybe_heroku_kafka_ssl()
+    default_client_producer_config() ++ maybe_heroku_kafka_ssl() ++ sasl_options()
+  end
+
+  def sasl_options do
+    case config_get(:sasl, nil) do
+      {:plain, user_env, password_env} -> Kaffe.Config.sasl_config({:plain, user_env, password_env})
+      _ -> []
+    end
   end
 
   def maybe_heroku_kafka_ssl do

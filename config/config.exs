@@ -14,4 +14,4 @@ config :kaffe,
 #   metadata: [:module]
 config :logger, backends: []
 
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"

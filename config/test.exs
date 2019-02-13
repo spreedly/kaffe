@@ -15,9 +15,10 @@ config :kaffe,
     rebalance_delay_ms: 100,
     max_bytes: 10_000,
     subscriber_retries: 1,
-    subscriber_retry_delay_ms: 5,
+    subscriber_retry_delay_ms: 5
   ],
   producer: [
     endpoints: [kafka: 9092],
-    topics: ["kaffe-test"]
+    topics: ["kaffe-test"],
+    sasl: {:plain, "KAFEE_PRODUCER_USER", "KAFEE_PRODUCER_PASSWORD"}
   ]
