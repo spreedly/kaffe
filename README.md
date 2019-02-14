@@ -127,7 +127,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
   The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
 
   ```elixir
-  defmodule MessageProcessor
+  defmodule MessageProcessor do
     def handle_messages(messages) do
       for %{key: key, value: value} = message <- messages do
         IO.inspect message
@@ -187,6 +187,13 @@ Batch message consumers receive a list of messages and work as part of the `:bro
           offset_reset_policy: :reset_to_latest,
           max_bytes: 500_000,
           worker_allocation_strategy: :worker_per_topic_partition,
+
+          #optional
+          sasl: %{
+            mechanism: :plain,
+            login: System.get_env("KAFFE_PRODUCER_USER"),
+            password: System.get_env("KAFFE_PRODUCER_PASSWORD")
+          }
         ],
       ```
 
@@ -281,7 +288,12 @@ config :kaffe,
     topics: ["kafka-topic"],
 
     # optional
-    partition_strategy: :md5
+    partition_strategy: :md5,
+    sasl: %{
+      mechanism: :plain,
+      login: System.get_env("KAFFE_PRODUCER_USER"),
+      password: System.get_env("KAFFE_PRODUCER_PASSWORD")
+    }
   ]
 ```
 
@@ -292,6 +304,8 @@ The `partition_strategy` setting can be one of:
 - function: a given function to call to determine the correct partition
 
 You can also set any of the Brod producer configuration options in the `producer` section - see [the Brod sources](https://github.com/klarna/brod/blob/master/src/brod_producer.erl#L90) for a list of keys and their meaning.
+
+If kafka broker configured with `SASL_PLAINTEXT` auth, `sasl` option can be added
 
 ### Heroku Configuration
 

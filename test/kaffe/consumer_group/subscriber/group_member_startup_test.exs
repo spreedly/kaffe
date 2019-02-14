@@ -36,9 +36,9 @@ defmodule Kaffe.GroupMemberStartupTest do
     :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms + 100)
 
     assignments =
-      Enum.reduce(0..31, %{}, fn partition, map ->
+      Enum.reduce(0..31, %{}, fn _partition, map ->
         receive do
-          {:subscribe, subscriber_name, _topic, ^partition} ->
+          {:subscribe, subscriber_name, _topic, partition} ->
             {_get, res} =
               Map.get_and_update(map, subscriber_name, fn
                 nil ->
