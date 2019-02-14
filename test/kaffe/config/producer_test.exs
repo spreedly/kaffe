@@ -3,8 +3,8 @@ defmodule Kaffe.Config.ProducerTest do
 
   describe "configuration/0" do
     test "correct settings are extracted" do
-      System.delete_env("KAFEE_PRODUCER_USER")
-      System.delete_env("KAFEE_PRODUCER_PASSWORD")
+      System.delete_env("KAFFE_PRODUCER_USER")
+      System.delete_env("KAFFE_PRODUCER_PASSWORD")
 
       expected = %{
         endpoints: [kafka: 9092],
@@ -32,8 +32,8 @@ defmodule Kaffe.Config.ProducerTest do
     end
 
     test "correct settings with sasl plain are extracted" do
-      System.put_env("KAFEE_PRODUCER_USER", "Alice")
-      System.put_env("KAFEE_PRODUCER_PASSWORD", "ecilA")
+      System.put_env("KAFFE_PRODUCER_USER", "Alice")
+      System.put_env("KAFFE_PRODUCER_PASSWORD", "ecilA")
 
       expected = %{
         endpoints: [kafka: 9092],
