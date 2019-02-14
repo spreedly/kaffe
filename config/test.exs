@@ -18,7 +18,7 @@ config :kaffe,
     subscriber_retry_delay_ms: 5
   ],
   producer: [
-    endpoints: [kafka: 9092],
+    endpoints: [localhost: 9092],
     topics: ["kaffe-test"],
-    sasl: {:plain, "KAFEE_PRODUCER_USER", "KAFEE_PRODUCER_PASSWORD"}
+    sasl: {:plain, "KAFFE_PRODUCER_USER", "KAFFE_PRODUCER_PASSWORD"}
   ]
