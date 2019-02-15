@@ -71,7 +71,14 @@ defmodule Kaffe.Config.Consumer do
   end
 
   def client_consumer_config do
-    default_client_consumer_config() ++ maybe_heroku_kafka_ssl()
+    default_client_consumer_config() ++ maybe_heroku_kafka_ssl() ++ sasl_options()
+  end
+
+  def sasl_options do
+    case config_get(:sasl, nil) do
+      {:plain, user_env, password_env} -> Kaffe.Config.sasl_config({:plain, user_env, password_env})
+      _ -> []
+    end
   end
 
   def default_client_consumer_config do

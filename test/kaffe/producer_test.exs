@@ -87,6 +87,8 @@ defmodule Kaffe.ProducerTest do
     end
 
     test "md5" do
+      System.put_env("KAFFE_PRODUCER_USER", "Alice")
+      System.put_env("KAFFE_PRODUCER_PASSWORD", "ecilA")
       update_producer_config(:partition_strategy, :md5)
 
       :ok = Producer.produce_sync("topic2", "key1", "value")
@@ -97,8 +99,8 @@ defmodule Kaffe.ProducerTest do
 
       :ok = Producer.produce_sync("topic2", "key1", "value")
 
-      assert_receive [:produce_sync, "topic2", ^partition1, "key1", "value"],
-                     "Should receive the same partition for the same key"
+      assert_receive [:produce_sync, "topic2", ^partition1, "key1", "value"]
+      # "Should receive the same partition for the same key"
 
       :ok = Producer.produce_sync("topic2", "key2", "value")
       assert_receive [:produce_sync, "topic2", partition2, "key2", "value"]
