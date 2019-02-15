@@ -187,6 +187,9 @@ Batch message consumers receive a list of messages and work as part of the `:bro
           offset_reset_policy: :reset_to_latest,
           max_bytes: 500_000,
           worker_allocation_strategy: :worker_per_topic_partition,
+
+          #optional
+          sasl: {:plain, "KAFFE_PRODUCER_USER", "KAFFE_PRODUCER_PASSWORD"}
         ],
       ```
 
