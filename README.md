@@ -189,11 +189,11 @@ Batch message consumers receive a list of messages and work as part of the `:bro
           worker_allocation_strategy: :worker_per_topic_partition,
 
           #optional
-          sasl: [
+          sasl: %{
             mech: :plain,
             login: System.get_env("KAFFE_PRODUCER_USER"),
             password: System.get_env("KAFFE_PRODUCER_PASSWORD")
-          ]
+          }
         ],
       ```
 
@@ -289,11 +289,11 @@ config :kaffe,
 
     # optional
     partition_strategy: :md5,
-    sasl: [
+    sasl: %{
       mech: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),
       password: System.get_env("KAFFE_PRODUCER_PASSWORD")
-    ]
+    }
   ]
 ```
 
