@@ -190,7 +190,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
 
           #optional
           sasl: %{
-            mech: :plain,
+            mechanism: :plain,
             login: System.get_env("KAFFE_PRODUCER_USER"),
             password: System.get_env("KAFFE_PRODUCER_PASSWORD")
           }
@@ -290,7 +290,7 @@ config :kaffe,
     # optional
     partition_strategy: :md5,
     sasl: %{
-      mech: :plain,
+      mechanism: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),
       password: System.get_env("KAFFE_PRODUCER_PASSWORD")
     }

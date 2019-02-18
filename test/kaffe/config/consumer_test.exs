@@ -53,7 +53,7 @@ defmodule Kaffe.Config.ConsumerTest do
     sasl_config =
       :kaffe
       |> Application.get_env(:consumer)
-      |> Keyword.put(:sasl, %{mech: :plain, login: "Alice", password: "ecilA"})
+      |> Keyword.put(:sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
 
     Application.put_env(:kaffe, :consumer, sasl_config)
 

@@ -17,7 +17,7 @@ config :kaffe,
     subscriber_retries: 1,
     subscriber_retry_delay_ms: 5,
     sasl: %{
-      mech: :plain,
+      mechanism: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),
       password: System.get_env("KAFFE_PRODUCER_PASSWORD")
     }
@@ -26,7 +26,7 @@ config :kaffe,
     endpoints: [kafka: 9092],
     topics: ["kaffe-test"],
     sasl: %{
-      mech: :plain,
+      mechanism: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),
       password: System.get_env("KAFFE_PRODUCER_PASSWORD")
     }

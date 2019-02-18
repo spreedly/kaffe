@@ -39,7 +39,7 @@ defmodule Kaffe.Config.ProducerTest do
       sasl_config =
         :kaffe
         |> Application.get_env(:producer)
-        |> Keyword.put(:sasl, %{mech: :plain, login: "Alice", password: "ecilA"})
+        |> Keyword.put(:sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
 
       Application.put_env(:kaffe, :producer, sasl_config)
 

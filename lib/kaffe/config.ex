@@ -18,8 +18,9 @@ defmodule Kaffe.Config do
     {ip |> String.to_atom(), port |> String.to_integer()}
   end
 
-  def sasl_config(%{mech: :plain, login: login, password: password}) when not is_nil(password) and not is_nil(login),
-    do: [sasl: {:plain, login, password}]
+  def sasl_config(%{mechanism: :plain, login: login, password: password})
+      when not is_nil(password) and not is_nil(login),
+      do: [sasl: {:plain, login, password}]
 
   def sasl_config(_), do: []
 
