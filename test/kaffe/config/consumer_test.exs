@@ -12,8 +12,12 @@ defmodule Kaffe.Config.ConsumerTest do
     end
 
     test "correct settings are extracted" do
-      System.delete_env("KAFFE_PRODUCER_USER")
-      System.delete_env("KAFFE_PRODUCER_PASSWORD")
+      no_sasl_config =
+        :kaffe
+        |> Application.get_env(:consumer)
+        |> Keyword.delete(:sasl)
+
+      Application.put_env(:kaffe, :consumer, no_sasl_config)
 
       expected = %{
         endpoints: [kafka: 9092],
@@ -46,8 +50,12 @@ defmodule Kaffe.Config.ConsumerTest do
   end
 
   test "correct settings with sasl plain are extracted" do
-    System.put_env("KAFFE_PRODUCER_USER", "Alice")
-    System.put_env("KAFFE_PRODUCER_PASSWORD", "ecilA")
+    sasl_config =
+      :kaffe
+      |> Application.get_env(:consumer)
+      |> Keyword.put(:sasl, %{mech: :plain, login: "Alice", password: "ecilA"})
+
+    Application.put_env(:kaffe, :consumer, sasl_config)
 
     expected = %{
       endpoints: [kafka: 9092],
