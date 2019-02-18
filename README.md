@@ -127,7 +127,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
   The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
 
   ```elixir
-  defmodule MessageProcessor
+  defmodule MessageProcessor do
     def handle_messages(messages) do
       for %{key: key, value: value} = message <- messages do
         IO.inspect message
@@ -189,7 +189,11 @@ Batch message consumers receive a list of messages and work as part of the `:bro
           worker_allocation_strategy: :worker_per_topic_partition,
 
           #optional
-          sasl: {:plain, "KAFFE_PRODUCER_USER", "KAFFE_PRODUCER_PASSWORD"}
+          sasl: [
+            mech: :plain,
+            login: System.get_env("KAFFE_PRODUCER_USER"),
+            password: System.get_env("KAFFE_PRODUCER_PASSWORD")
+          ]
         ],
       ```
 
@@ -285,7 +289,11 @@ config :kaffe,
 
     # optional
     partition_strategy: :md5,
-    sasl: {:plain, "KAFFE_PRODUCER_USER", "KAFFE_PRODUCER_PASSWORD"}
+    sasl: [
+      mech: :plain,
+      login: System.get_env("KAFFE_PRODUCER_USER"),
+      password: System.get_env("KAFFE_PRODUCER_PASSWORD")
+    ]
   ]
 ```
 

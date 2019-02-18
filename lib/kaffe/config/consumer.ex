@@ -73,10 +73,9 @@ defmodule Kaffe.Config.Consumer do
   end
 
   def sasl_options do
-    case config_get(:sasl, nil) do
-      {:plain, user_env, password_env} -> Kaffe.Config.sasl_config({:plain, user_env, password_env})
-      _ -> []
-    end
+    :sasl
+    |> config_get(%{})
+    |> Kaffe.Config.sasl_config()
   end
 
   def default_client_consumer_config do

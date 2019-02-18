@@ -18,13 +18,10 @@ defmodule Kaffe.Config do
     {ip |> String.to_atom(), port |> String.to_integer()}
   end
 
-  def sasl_config({method, user_env, password_env}) do
-    case {method, System.get_env(user_env), System.get_env(password_env)} do
-      {:plain, nil, nil} -> []
-      {:plain, plain_auth_user, plain_auth_password} -> [sasl: {:plain, plain_auth_user, plain_auth_password}]
-      _ -> []
-    end
-  end
+  def sasl_config(%{mech: :plain, login: login, password: password}) when not is_nil(password) and not is_nil(login),
+    do: [sasl: {:plain, login, password}]
+
+  def sasl_config(_), do: []
 
   def ssl_config do
     ssl_config(client_cert(), client_cert_key())
