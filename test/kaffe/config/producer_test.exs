@@ -73,7 +73,13 @@ defmodule Kaffe.Config.ProducerTest do
   test "string endpoints parsed correctly" do
     config = Application.get_env(:kaffe, :producer)
     endpoints = Keyword.get(config, :endpoints)
-    Application.put_env(:kaffe, :producer, Keyword.put(config, :endpoints, "kafka:9092,localhost:9092"))
+
+    new_config =
+      config
+      |> Keyword.delete(:sasl)
+      |> Keyword.put(:endpoints, "kafka:9092,localhost:9092")
+
+    Application.put_env(:kaffe, :producer, new_config)
 
     expected = %{
       endpoints: [kafka: 9092, localhost: 9092],
