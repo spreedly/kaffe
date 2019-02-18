@@ -22,7 +22,6 @@ defmodule Kaffe.Config do
     do: [sasl: {:plain, login, password}]
 
   def sasl_config(_), do: []
-
   def ssl_config do
     ssl_config(client_cert(), client_cert_key())
   end
@@ -68,5 +67,20 @@ defmodule Kaffe.Config do
   def extract_type_and_der(cert_key) do
     {type, der_cert, _} = decode_pem(cert_key)
     {type, der_cert}
+  end
+
+  def parse_endpoints(endpoints) when is_list(endpoints), do: endpoints
+
+  def parse_endpoints(endpoints) when is_binary(endpoints) do
+    endpoints
+    |> String.split(",")
+    |> Enum.map(fn endpoint ->
+      {hostname, port} =
+        endpoint
+        |> String.split(":")
+        |> List.to_tuple()
+
+      {String.to_atom(hostname), String.to_integer(port)}
+    end)
   end
 end
