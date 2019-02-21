@@ -2,11 +2,13 @@ defmodule Kaffe.Config do
   def heroku_kafka_endpoints do
     "KAFKA_URL"
     |> System.get_env()
-    |> heroku_kafka_endpoints
+    |> parse_endpoints()
   end
 
-  def heroku_kafka_endpoints(kafka_url) do
-    kafka_url
+  def parse_endpoints(endpoints) when is_list(endpoints), do: endpoints
+
+  def parse_endpoints(url) when is_binary(url) do
+    url
     |> String.replace("kafka+ssl://", "")
     |> String.replace("kafka://", "")
     |> String.split(",")
@@ -69,20 +71,5 @@ defmodule Kaffe.Config do
   def extract_type_and_der(cert_key) do
     {type, der_cert, _} = decode_pem(cert_key)
     {type, der_cert}
-  end
-
-  def parse_endpoints(endpoints) when is_list(endpoints), do: endpoints
-
-  def parse_endpoints(endpoints) when is_binary(endpoints) do
-    endpoints
-    |> String.split(",")
-    |> Enum.map(fn endpoint ->
-      {hostname, port} =
-        endpoint
-        |> String.split(":")
-        |> List.to_tuple()
-
-      {String.to_atom(hostname), String.to_integer(port)}
-    end)
   end
 end

@@ -88,10 +88,9 @@ defmodule Kaffe.Config.ConsumerTest do
   end
 
   test "correct settings with sasl plain are extracted" do
-    sasl_config =
-      :kaffe
-      |> Application.get_env(:consumer)
-      |> Keyword.put(:sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
+    config = Application.get_env(:kaffe, :consumer)
+    sasl = Keyword.get(config, :sasl)
+    sasl_config = Keyword.put(config, :sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
 
     Application.put_env(:kaffe, :consumer, sasl_config)
 
@@ -121,6 +120,10 @@ defmodule Kaffe.Config.ConsumerTest do
       offset_reset_policy: :reset_by_subscriber,
       worker_allocation_strategy: :worker_per_partition
     }
+
+    on_exit(fn ->
+      Application.put_env(:kaffe, :consumer, Keyword.put(config, :sasl, sasl))
+    end)
 
     assert Kaffe.Config.Consumer.configuration() == expected
   end

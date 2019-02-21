@@ -14,10 +14,7 @@ defmodule Kaffe.Config.Producer do
   def producer_topics, do: config_get!(:topics)
 
   def endpoints do
-    case heroku_kafka?() do
-      true -> Kaffe.Config.heroku_kafka_endpoints()
-      false -> parse_endpoints(config_get!(:endpoints))
-    end
+    parse_endpoints(config_get!(:endpoints))
   end
 
   def client_producer_config do

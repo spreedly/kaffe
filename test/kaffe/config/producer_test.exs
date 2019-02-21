@@ -36,10 +36,9 @@ defmodule Kaffe.Config.ProducerTest do
     end
 
     test "correct settings with sasl plain are extracted" do
-      sasl_config =
-        :kaffe
-        |> Application.get_env(:producer)
-        |> Keyword.put(:sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
+      config = Application.get_env(:kaffe, :producer)
+      sasl = Keyword.get(config, :sasl)
+      sasl_config = Keyword.put(config, :sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
 
       Application.put_env(:kaffe, :producer, sasl_config)
 
@@ -65,6 +64,10 @@ defmodule Kaffe.Config.ProducerTest do
         client_name: :kaffe_producer_client,
         partition_strategy: :md5
       }
+
+      on_exit(fn ->
+        Application.put_env(:kaffe, :producer, Keyword.put(config, :sasl, sasl))
+      end)
 
       assert Kaffe.Config.Producer.configuration() == expected
     end
