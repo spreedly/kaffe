@@ -7,6 +7,7 @@ defmodule Kaffe.ProducerTest do
     Process.register(self(), :test_case)
     update_producer_config(:topics, ["topic", "topic2"])
     update_producer_config(:partition_strategy, :md5)
+    :ok = Kaffe.Producer.start_producer_client()
     TestBrod.set_produce_response(:ok)
     :ok
   end
