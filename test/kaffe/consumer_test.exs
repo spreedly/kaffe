@@ -32,4 +32,14 @@ defmodule Kaffe.ConsumerTest do
     Consumer.handle_message(c.topic, c.partition, c.message, state)
     assert_receive %{topic: ^topic, partition: ^partition, value: ^value}
   end
+
+  describe "start_link" do
+    test "can be started without any options" do
+      {:ok, _pid} = Consumer.start_link()
+    end
+
+    test "can be started with custom options" do
+      {:ok, _pid} = Consumer.start_link(%{topics: ["one-topic", "another-topic"]})
+    end
+  end
 end
