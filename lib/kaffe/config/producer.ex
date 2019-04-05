@@ -1,10 +1,10 @@
 defmodule Kaffe.Config.Producer do
   import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1]
 
-  def configuration do
+  def configuration(producer_overrides \\ %{}) do
     %{
       endpoints: endpoints(),
-      producer_config: client_producer_config(),
+      producer_config: client_producer_config(producer_overrides),
       client_name: config_get(:client_name, :kaffe_producer_client),
       topics: producer_topics(),
       partition_strategy: config_get(:partition_strategy, :md5)
@@ -21,8 +21,10 @@ defmodule Kaffe.Config.Producer do
     end
   end
 
-  def client_producer_config do
-    default_client_producer_config() ++ maybe_heroku_kafka_ssl() ++ sasl_options()
+  def client_producer_config(overrides) do
+    base_config = default_client_producer_config() ++ maybe_heroku_kafka_ssl() ++ sasl_options()
+    overrides_keyword_list = Enum.into(overrides, [])
+    Keyword.merge(base_config, overrides_keyword_list)
   end
 
   def sasl_options do

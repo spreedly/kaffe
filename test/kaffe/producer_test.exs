@@ -137,6 +137,16 @@ defmodule Kaffe.ProducerTest do
     end
   end
 
+  describe "start_link" do
+    test "can be started without any options" do
+      assert :ok == Producer.start_producer_client()
+    end
+
+    test "can be started with custom options" do
+      assert :ok == Producer.start_producer_client(%{allow_topic_auto_creation: false})
+    end
+  end
+
   defp update_producer_config(key, value) do
     producer_config = Application.get_env(:kaffe, :producer)
     Application.put_env(:kaffe, :producer, put_in(producer_config, [key], value))

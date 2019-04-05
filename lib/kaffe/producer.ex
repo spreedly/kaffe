@@ -27,8 +27,9 @@ defmodule Kaffe.Producer do
   ## public api
   ## -------------------------------------------------------------------------
 
-  def start_producer_client do
-    @kafka.start_client(config().endpoints, client_name(), config().producer_config)
+  def start_producer_client(opts \\ %{}) do
+    conf = config(opts)
+    @kafka.start_client(conf.endpoints, client_name(), conf.producer_config)
   end
 
   @doc """
@@ -177,7 +178,7 @@ defmodule Kaffe.Producer do
     config().partition_strategy
   end
 
-  defp config do
-    Kaffe.Config.Producer.configuration()
+  defp config(opts \\ %{}) do
+    Kaffe.Config.Producer.configuration(opts)
   end
 end

@@ -1,6 +1,13 @@
 defmodule Kaffe.Config.ProducerTest do
   use ExUnit.Case, async: true
 
+  describe "configuration/1" do
+    test "custom options override values returned from base config" do
+      %{producer_config: producer_config} = Kaffe.Config.Producer.configuration(%{allow_topic_auto_creation: false})
+      assert Keyword.get(producer_config, :allow_topic_auto_creation) == false
+    end
+  end
+
   describe "configuration/0" do
     test "correct settings are extracted" do
       no_sasl_config =
