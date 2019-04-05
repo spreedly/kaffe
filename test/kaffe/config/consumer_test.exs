@@ -1,7 +1,15 @@
 defmodule Kaffe.Config.ConsumerTest do
   use ExUnit.Case
 
-  describe "configuration/0" do
+  describe "configuration/1" do
+    test "custom options override values returned from base config" do
+      expected_endpoints = [overridden: :endpoints]
+      %{endpoints: endpoints} = Kaffe.Config.Consumer.configuration(%{endpoints: expected_endpoints})
+      assert endpoints == expected_endpoints
+    end
+  end
+
+  describe "base_config/0" do
     setup do
       consumer_config =
         Application.get_env(:kaffe, :consumer)
@@ -45,7 +53,7 @@ defmodule Kaffe.Config.ConsumerTest do
         worker_allocation_strategy: :worker_per_partition
       }
 
-      assert Kaffe.Config.Consumer.configuration() == expected
+      assert Kaffe.Config.Consumer.base_config() == expected
     end
 
     test "string endpoints parsed correctly" do
@@ -83,7 +91,7 @@ defmodule Kaffe.Config.ConsumerTest do
         Application.put_env(:kaffe, :consumer, Keyword.put(config, :endpoints, endpoints))
       end)
 
-      assert Kaffe.Config.Consumer.configuration() == expected
+      assert Kaffe.Config.Consumer.base_config() == expected
     end
   end
 
@@ -125,7 +133,7 @@ defmodule Kaffe.Config.ConsumerTest do
       Application.put_env(:kaffe, :consumer, Keyword.put(config, :sasl, sasl))
     end)
 
-    assert Kaffe.Config.Consumer.configuration() == expected
+    assert Kaffe.Config.Consumer.base_config() == expected
   end
 
   describe "offset_reset_policy" do
@@ -136,7 +144,7 @@ defmodule Kaffe.Config.ConsumerTest do
 
       Application.put_env(:kaffe, :consumer, consumer_config)
 
-      assert Kaffe.Config.Consumer.configuration().offset_reset_policy == :reset_by_subscriber
+      assert Kaffe.Config.Consumer.base_config().offset_reset_policy == :reset_by_subscriber
     end
   end
 end
