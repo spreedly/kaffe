@@ -90,8 +90,9 @@ defmodule Kaffe.GroupManager do
   end
 
   @doc """
-  Subscribe to a new set of topics. The new list of subscribed topics will only include
-  the requested topics and none of the currently configured topics.
+  Subscribe to a new set of topics or list the currently subscribed topics. The
+  new list of subscribed topics will only include the requested topics and none
+  of the currently configured topics.
   """
   def handle_call({:subscribe_to_topics, requested_topics}, _from, %State{topics: topics} = state) do
     new_topics = requested_topics -- topics
@@ -100,9 +101,6 @@ defmodule Kaffe.GroupManager do
     {:reply, {:ok, new_topics}, %State{state | topics: state.topics ++ new_topics}}
   end
 
-  @doc """
-  List the currently subscribed topics
-  """
   def handle_call({:list_subscribed_topics}, _from, %State{topics: topics} = state) do
     {:reply, topics, state}
   end
