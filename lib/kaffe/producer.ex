@@ -123,14 +123,22 @@ defmodule Kaffe.Producer do
   end
 
   defp produce_value(topic, key, value) do
-    {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
-    partition = choose_partition(topic, partitions_count, key, value, global_partition_strategy())
+    case @kafka.get_partitions_count(client_name(), topic) do
+      {:ok, partitions_count} ->
+        partition = choose_partition(topic, partitions_count, key, value, global_partition_strategy())
 
-    Logger.debug(
-      "event#produce topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
-    )
+        Logger.debug(
+          "event#produce topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
+        )
 
-    @kafka.produce_sync(client_name(), topic, partition, key, value)
+        @kafka.produce_sync(client_name(), topic, partition, key, value)
+      error ->
+        Logger.warn(
+          "unable to produce topic=#{topic} key=#{key} error=#{inspect(error)}"
+        )
+
+        error
+    end
   end
 
   defp add_timestamp(messages) do
