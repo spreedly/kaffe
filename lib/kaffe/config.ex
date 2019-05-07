@@ -30,10 +30,10 @@ defmodule Kaffe.Config do
     ssl_config(client_cert(), client_cert_key())
   end
 
-  def ssl_config(_client_cert = nil, _client_cert_key = nil) do
-    []
-  end
+  def ssl_config(true), do: [ssl: true]
+  def ssl_config(_), do: []
 
+  def ssl_config(_client_cert = nil, _client_cert_key = nil), do: []
   def ssl_config(client_cert, client_cert_key) do
     [
       ssl: [
