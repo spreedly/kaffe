@@ -78,7 +78,7 @@ Batch message consumers receive a list of messages and work as part of the `:bro
     ```elixir
     config :kaffe,
       consumer: [
-        endpoints: [kafka: 9092], # that's [hostname: kafka_port]
+        endpoints: [{"kafka", 9092}], # that's [{"hostname", kafka_port}]
         topics: ["interesting-topic"], # the topic(s) that will be consumed
         consumer_group: "your-app-consumer-group", # the consumer group for tracking offsets in Kafka
         message_handler: MessageProcessor, # the module from Step 1 that will process messages
@@ -284,11 +284,12 @@ Configure your Kaffe Producer in your mix config
 ```elixir
 config :kaffe,
   producer: [
-    endpoints: [kafka: 9092], # [hostname: port]
+    endpoints: [{"kafka", 9092}], # [{"hostname", port}]
     topics: ["kafka-topic"],
 
     # optional
     partition_strategy: :md5,
+    ssl: true
     sasl: %{
       mechanism: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),
@@ -305,7 +306,9 @@ The `partition_strategy` setting can be one of:
 
 You can also set any of the Brod producer configuration options in the `producer` section - see [the Brod sources](https://github.com/klarna/brod/blob/master/src/brod_producer.erl#L90) for a list of keys and their meaning.
 
-If kafka broker configured with `SASL_PLAINTEXT` auth, `sasl` option can be added
+If kafka broker configured with `SASL_PLAINTEXT` auth, `sasl` option can be added.
+
+If using Confluent Hosted Kafka, make sure `ssl` is `true`.
 
 ### Heroku Configuration
 
