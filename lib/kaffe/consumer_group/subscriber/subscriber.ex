@@ -154,7 +154,11 @@ defmodule Kaffe.Subscriber do
   end
 
   def handle_cast({:commit_offsets, topic, partition, generation_id, offset}, state) do
-    Logger.debug("event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{generation_id}")
+    Logger.debug(
+      "event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{
+        generation_id
+      }"
+    )
 
     # Is this the ack we're looking for?
     ^topic = state.topic

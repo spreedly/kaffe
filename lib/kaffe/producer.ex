@@ -132,10 +132,9 @@ defmodule Kaffe.Producer do
         )
 
         @kafka.produce_sync(client_name(), topic, partition, key, value)
+
       error ->
-        Logger.warn(
-          "event#produce topic=#{topic} key=#{key} error=#{inspect(error)}"
-        )
+        Logger.warn("event#produce topic=#{topic} key=#{key} error=#{inspect(error)}")
 
         error
     end
