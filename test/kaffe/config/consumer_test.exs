@@ -6,6 +6,7 @@ defmodule Kaffe.Config.ConsumerTest do
       consumer_config =
         Application.get_env(:kaffe, :consumer)
         |> Keyword.delete(:offset_reset_policy)
+        |> Keyword.delete(:ssl)
         |> Keyword.put(:start_with_earliest_message, true)
 
       Application.put_env(:kaffe, :consumer, consumer_config)
@@ -31,7 +32,7 @@ defmodule Kaffe.Config.ConsumerTest do
         consumer_config: [
           auto_start_producers: false,
           allow_topic_auto_creation: false,
-          begin_offset: :earliest
+          begin_offset: :earliest,
         ],
         message_handler: SilentMessage,
         async_message_ack: false,
@@ -123,6 +124,47 @@ defmodule Kaffe.Config.ConsumerTest do
 
     on_exit(fn ->
       Application.put_env(:kaffe, :consumer, Keyword.put(config, :sasl, sasl))
+    end)
+
+    assert Kaffe.Config.Consumer.configuration() == expected
+  end
+
+  test "correct settings with ssl are extracted" do
+    config = Application.get_env(:kaffe, :consumer)
+    ssl = Keyword.get(config, :ssl)
+    ssl_config = Keyword.put(config, :ssl, true)
+
+    Application.put_env(:kaffe, :consumer, ssl_config)
+
+    expected = %{
+      endpoints: [kafka: 9092],
+      subscriber_name: :"kaffe-test-group",
+      consumer_group: "kaffe-test-group",
+      topics: ["kaffe-test"],
+      group_config: [
+        offset_commit_policy: :commit_to_kafka_v2,
+        offset_commit_interval_seconds: 10
+      ],
+      consumer_config: [
+        auto_start_producers: false,
+        allow_topic_auto_creation: false,
+        begin_offset: :earliest,
+        ssl: true
+      ],
+      message_handler: SilentMessage,
+      async_message_ack: false,
+      rebalance_delay_ms: 100,
+      max_bytes: 10_000,
+      min_bytes: 0,
+      max_wait_time: 10_000,
+      subscriber_retries: 1,
+      subscriber_retry_delay_ms: 5,
+      offset_reset_policy: :reset_by_subscriber,
+      worker_allocation_strategy: :worker_per_partition
+    }
+
+    on_exit(fn ->
+      Application.put_env(:kaffe, :consumer, Keyword.put(config, :ssl, ssl))
     end)
 
     assert Kaffe.Config.Consumer.configuration() == expected
