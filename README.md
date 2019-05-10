@@ -28,115 +28,33 @@ An opinionated, highly specific, Elixir wrapper around
 
 ## Kaffe Consumer Usage
 
-Kaffe has two primary modes of message consumption.
-
-Single message consumers process one message at a time using the `:brod_group_subscriber` behavior. This supports consumers in a consumer group in a single node (e.g., Heroku dyno). For such consumers, this is the place to start as it's the simplest mode of operation.
-
-Batch message consumers receive a list of messages and work as part of the `:brod_group_member` behavior. This has a few important benefits:
+Consumers receive a list of messages and work as part of the `:brod_group_member` behavior. This has a few important benefits:
 
 1. Group members assign a "subscriber" to each partition in the topic. Because Kafka topics scale with partitions, having a worker per partition usually increases throughput.
 2. Group members correctly handle partition assignments across multiple clients in a consumer group. This means that this mode of operation will scale horizontally (e.g., multiple dynos on Heroku).
 3. Downstream processing that benefits from batching (like writing to another Kafka topic) is more easily supported.
 
-### Kaffe Consumer - Single Message Consumer
-
-1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
-
-    The module's `handle_message/1` function _must_ return `:ok` or Kaffe will throw an error. In normal (synchronous consumer) operation the Kaffe consumer will block until your `handle_message/1` function returns `:ok`.
-
-    ### Example
-
-      ```elixir
-      defmodule MessageProcessor do
-        def handle_message(%{key: key, value: value} = message) do
-          IO.inspect message
-          IO.puts "#{key}: #{value}"
-          :ok # The handle_message function MUST return :ok
-        end
-      end
-      ```
-
-    ### Message Structure
-
-    ```elixir
-    %{
-      attributes: 0,
-      crc: 1914336469,
-      key: "kafka message key",
-      magic_byte: 0,
-      offset: 41,
-      partition: 17,
-      topic: "some-kafka-topic",
-      value: "the actual kafka message value is here",
-      ts: 1234567890123, # timestamp in milliseconds
-      ts_type: :append  # timestamp type: :undefined | :create | :append
-    }
-    ```
-
-2. Configure your Kaffe Consumer in your mix config
-
-    ```elixir
-    config :kaffe,
-      consumer: [
-        endpoints: [kafka: 9092], # that's [hostname: kafka_port]
-        topics: ["interesting-topic"], # the topic(s) that will be consumed
-        consumer_group: "your-app-consumer-group", # the consumer group for tracking offsets in Kafka
-        message_handler: MessageProcessor, # the module from Step 1 that will process messages
-
-        # optional
-        async_message_ack: false, # see "async message acknowledgement" below
-        start_with_earliest_message: true # default false
-      ],
-    ```
-
-    The `start_with_earliest_message` field controls where your consumer group starts when it starts for the very first time. Once offsets have been committed to Kafka then they will supercede this option. If omitted then your consumer group will start processing from the most recent messages in the topic instead of consuming all available messages.
-
-    ### Heroku Configuration
-
-    To configure a Kaffe Consumer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
-
-    ```elixir
-    config :kaffe,
-      consumer: [
-        heroku_kafka_env: true,
-        topics: ["interesting-topic"],
-        consumer_group: "your-app-consumer-group",
-        message_handler: MessageProcessor
-      ]
-    ```
-
-    With that setting in place Kaffe will automatically pull required info from the following ENV variables:
-
-    - `KAFKA_URL`
-    - `KAFKA_CLIENT_CERT`
-    - `KAFKA_CLIENT_CERT_KEY`
-    - `KAFKA_TRUSTED_CERT` (not used yet)
-
-3. Add `Kaffe.Consumer` as a worker in your supervision tree
-
-      ```elixir
-      worker(Kaffe.Consumer, [])
-      ```
+There is also legacy support for single message consumers, which process one message at a time using the `:brod_group_subscriber` behavior. This was the original mode of operation for Kaffe but is slow and does not scale. For this reason it is considered deprecated.
 
 ### Kaffe GroupMember - Batch Message Consumer
 
 1. Define a `handle_messages/1` function in the provided module.
 
-  `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
+    `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
-  The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
+    The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
 
-  ```elixir
-  defmodule MessageProcessor do
-    def handle_messages(messages) do
-      for %{key: key, value: value} = message <- messages do
-        IO.inspect message
-        IO.puts "#{key}: #{value}"
+    ```elixir
+    defmodule MessageProcessor do
+      def handle_messages(messages) do
+        for %{key: key, value: value} = message <- messages do
+          IO.inspect message
+          IO.puts "#{key}: #{value}"
+        end
+        :ok # Important!
       end
-      :ok # Important!
     end
-  end
-  ```
+    ```
 
 2. The configuration options for the `GroupMember` consumer are a
    superset of those for `Kaffe.Consumer`, except for
@@ -219,7 +137,111 @@ Batch message consumers receive a list of messages and work as part of the `:bro
       end
       ```
 
-### async message acknowledgement
+#### Managing how offsets are committed
+
+In some cases you may not want to commit back the most recent offset after processing a list of messages. For example, if you're batching messages to be sent elsewhere and want to ensure that a batch can be rebuilt should there be an error further downstream. In that example you might want to keep the offset of the first message in your batch so your consumer can restart back at that point to reprocess and rebatch the messages. Your message handler can respond in the following ways to manage how offsets are committed back:
+
+`:ok` - commit back the most recent offset and request more messages
+`{:ok, :no_commit}` - do _not_ commit back the most recent offset and request more message from the offset of the last message
+`{:ok, offset}` - commit back at the offset specified and request messages from that point forward
+
+Example:
+
+```elixir
+defmodule MessageProcessor
+  def handle_messages(messages) do
+    for %{key: key, value: value} = message <- messages do
+      IO.inspect message
+      IO.puts "#{key}: #{value}"
+    end
+    {:ok, :no_commit}
+  end
+end
+```
+
+### Kaffe Consumer - Single Message Consumer (Deprecated)
+
+_For backward compatiblitly only, you should use `Kaffe.GroupMemberSupervisor` instead!_
+
+1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
+
+    The module's `handle_message/1` function _must_ return `:ok` or Kaffe will throw an error. In normal (synchronous consumer) operation the Kaffe consumer will block until your `handle_message/1` function returns `:ok`.
+
+    ### Example
+
+      ```elixir
+      defmodule MessageProcessor do
+        def handle_message(%{key: key, value: value} = message) do
+          IO.inspect message
+          IO.puts "#{key}: #{value}"
+          :ok # The handle_message function MUST return :ok
+        end
+      end
+      ```
+
+    ### Message Structure
+
+    ```elixir
+    %{
+      attributes: 0,
+      crc: 1914336469,
+      key: "kafka message key",
+      magic_byte: 0,
+      offset: 41,
+      partition: 17,
+      topic: "some-kafka-topic",
+      value: "the actual kafka message value is here",
+      ts: 1234567890123, # timestamp in milliseconds
+      ts_type: :append  # timestamp type: :undefined | :create | :append
+    }
+    ```
+
+2. Configure your Kaffe Consumer in your mix config
+
+    ```elixir
+    config :kaffe,
+      consumer: [
+        endpoints: [kafka: 9092], # that's [hostname: kafka_port]
+        topics: ["interesting-topic"], # the topic(s) that will be consumed
+        consumer_group: "your-app-consumer-group", # the consumer group for tracking offsets in Kafka
+        message_handler: MessageProcessor, # the module from Step 1 that will process messages
+
+        # optional
+        async_message_ack: false, # see "async message acknowledgement" below
+        start_with_earliest_message: true # default false
+      ],
+    ```
+
+    The `start_with_earliest_message` field controls where your consumer group starts when it starts for the very first time. Once offsets have been committed to Kafka then they will supercede this option. If omitted then your consumer group will start processing from the most recent messages in the topic instead of consuming all available messages.
+
+    ### Heroku Configuration
+
+    To configure a Kaffe Consumer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
+
+    ```elixir
+    config :kaffe,
+      consumer: [
+        heroku_kafka_env: true,
+        topics: ["interesting-topic"],
+        consumer_group: "your-app-consumer-group",
+        message_handler: MessageProcessor
+      ]
+    ```
+
+    With that setting in place Kaffe will automatically pull required info from the following ENV variables:
+
+    - `KAFKA_URL`
+    - `KAFKA_CLIENT_CERT`
+    - `KAFKA_CLIENT_CERT_KEY`
+    - `KAFKA_TRUSTED_CERT` (not used yet)
+
+3. Add `Kaffe.Consumer` as a worker in your supervision tree
+
+      ```elixir
+      worker(Kaffe.Consumer, [])
+      ```
+
+#### async message acknowledgement
 
 If you need asynchronous message consumption:
 
@@ -253,28 +275,6 @@ Kafka only tracks a single numeric offset, not individual messages. If a message
 
 It's possible that your topic and system are entirely ok with losing some messages (i.e. frequent metrics that aren't individually important).
 
-### Managing how offsets are committed
-
-In some cases you may not want to commit back the most recent offset after processing a list of messages. For example, if you're batching messages to be sent elsewhere and want to ensure that a batch can be rebuilt should there be an error further downstream. In that example you might want to keep the offset of the first message in your batch so your consumer can restart back at that point to reprocess and rebatch the messages. Your message handler can respond in the following ways to manage how offsets are committed back:
-
-`:ok` - commit back the most recent offset and request more messages
-`{:ok, :no_commit}` - do _not_ commit back the most recent offset and request more message from the offset of the last message
-`{:ok, offset}` - commit back at the offset specified and request messages from that point forward
-
-Example:
-
-```elixir
-defmodule MessageProcessor
-  def handle_messages(messages) do
-    for %{key: key, value: value} = message <- messages do
-      IO.inspect message
-      IO.puts "#{key}: #{value}"
-    end
-    {:ok, :no_commit}
-  end
-end
-```
-
 ## Kaffe Producer Usage
 
 `Kaffe.Producer` handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message. Kaffe automatically inserts a Kafka timestamp with each message.
@@ -307,7 +307,7 @@ You can also set any of the Brod producer configuration options in the `producer
 
 If kafka broker configured with `SASL_PLAINTEXT` auth, `sasl` option can be added
 
-### Heroku Configuration
+## Heroku Configuration
 
 To configure a Kaffe Producer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
 
@@ -329,7 +329,7 @@ With that setting in place Kaffe will automatically pull required info from the 
 - `KAFKA_CLIENT_CERT_KEY`
 - `KAFKA_TRUSTED_CERT`
 
-### Producing to Kafka
+## Producing to Kafka
 
 Currently only synchronous message production is supported.
 
