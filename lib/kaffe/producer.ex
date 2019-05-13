@@ -27,7 +27,11 @@ defmodule Kaffe.Producer do
   ## public api
   ## -------------------------------------------------------------------------
 
-  def start_producer_client do
+  def start_producer_client(opts \\ []) do
+    client_name = Keyword.get(opts, :client_name) || client_name()
+    endpoints = Keyword.get(opts, :endpoints) || config().endpoints
+    producer_config = Keyword.get(opts, :producer_config) || config().producer_config
+
     @kafka.start_client(config().endpoints, client_name(), config().producer_config)
   end
 
@@ -132,10 +136,9 @@ defmodule Kaffe.Producer do
         )
 
         @kafka.produce_sync(client_name(), topic, partition, key, value)
+
       error ->
-        Logger.warn(
-          "event#produce topic=#{topic} key=#{key} error=#{inspect(error)}"
-        )
+        Logger.warn("event#produce topic=#{topic} key=#{key} error=#{inspect(error)}")
 
         error
     end
