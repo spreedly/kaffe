@@ -9,14 +9,14 @@ defmodule Kaffe do
 
   require Logger
 
-  def start(_type, _args) do
-    import Supervisor.Spec, warn: false
-
+  def start(_type, args) do
     Logger.debug("event#start=#{__MODULE__}")
 
-    if Application.get_env(:kaffe, :producer) do
+    start_producer? = Keyword.get(args, :start_producer?) || Application.get_env(:kaffe, :producer)
+
+    if start_producer? do
       Logger.debug("event#start_producer_client=#{__MODULE__}")
-      Kaffe.Producer.start_producer_client()
+      Kaffe.Producer.start_producer_client(args)
     end
 
     children = []
