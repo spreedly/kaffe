@@ -6,18 +6,16 @@ defmodule Kaffe.Config.Producer do
       endpoints: endpoints(),
       producer_config: client_producer_config(),
       client_name: config_get(:client_name, :kaffe_producer_client),
-      topics: producer_topics(),
+      topics: config_get(:topics, []),
       partition_strategy: config_get(:partition_strategy, :md5)
     }
   end
-
-  def producer_topics, do: config_get!(:topics)
 
   def endpoints do
     if heroku_kafka?() do
       heroku_kafka_endpoints()
     else
-      parse_endpoints(config_get!(:endpoints))
+      parse_endpoints(config_get(:endpoints, []))
     end
   end
 
@@ -67,6 +65,9 @@ defmodule Kaffe.Config.Producer do
 
   def config_get(key, default) do
     Application.get_env(:kaffe, :producer)
-    |> Keyword.get(key, default)
+    |> case do
+      nil -> default
+      config -> Keyword.get(config, key, default)
+    end
   end
 end
