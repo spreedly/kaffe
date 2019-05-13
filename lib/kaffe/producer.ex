@@ -32,7 +32,7 @@ defmodule Kaffe.Producer do
     endpoints = Keyword.get(opts, :endpoints) || config().endpoints
     producer_config = Keyword.get(opts, :producer_config) || config().producer_config
 
-    @kafka.start_client(config().endpoints, client_name(), config().producer_config)
+    @kafka.start_client(endpoints, client_name, producer_config)
   end
 
   @doc """
