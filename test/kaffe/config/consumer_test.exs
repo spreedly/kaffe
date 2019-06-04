@@ -21,7 +21,7 @@ defmodule Kaffe.Config.ConsumerTest do
       Application.put_env(:kaffe, :consumer, no_sasl_config)
 
       expected = %{
-        endpoints: [kafka: 9092],
+        endpoints: [{'kafka', 9092}],
         subscriber_name: :"kaffe-test-group",
         consumer_group: "kaffe-test-group",
         topics: ["kaffe-test"],
@@ -55,7 +55,7 @@ defmodule Kaffe.Config.ConsumerTest do
       Application.put_env(:kaffe, :consumer, Keyword.put(config, :endpoints, "kafka:9092,localhost:9092"))
 
       expected = %{
-        endpoints: [kafka: 9092, localhost: 9092],
+        endpoints: [{'kafka', 9092}, {'localhost', 9092}],
         subscriber_name: :"kaffe-test-group",
         consumer_group: "kaffe-test-group",
         topics: ["kaffe-test"],
@@ -96,7 +96,7 @@ defmodule Kaffe.Config.ConsumerTest do
     Application.put_env(:kaffe, :consumer, sasl_config)
 
     expected = %{
-      endpoints: [kafka: 9092],
+      endpoints: [{'kafka', 9092}],
       subscriber_name: :"kaffe-test-group",
       consumer_group: "kaffe-test-group",
       topics: ["kaffe-test"],
@@ -137,7 +137,7 @@ defmodule Kaffe.Config.ConsumerTest do
     Application.put_env(:kaffe, :consumer, ssl_config)
 
     expected = %{
-      endpoints: [kafka: 9092],
+      endpoints: [{'kafka', 9092}],
       subscriber_name: :"kaffe-test-group",
       consumer_group: "kaffe-test-group",
       topics: ["kaffe-test"],

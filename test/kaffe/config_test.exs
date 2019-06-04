@@ -8,7 +8,7 @@ defmodule Kaffe.ConfigTest do
         "kafka+ssl://192.168.1.100:9096,kafka+ssl://192.168.1.101:9096,kafka+ssl://192.168.1.102:9096"
       )
 
-      expected = [{:"192.168.1.100", 9096}, {:"192.168.1.101", 9096}, {:"192.168.1.102", 9096}]
+      expected = [{'192.168.1.100', 9096}, {'192.168.1.101', 9096}, {'192.168.1.102', 9096}]
 
       on_exit(fn ->
         System.delete_env("KAFKA_URL")
@@ -19,7 +19,7 @@ defmodule Kaffe.ConfigTest do
 
     test "transforms endpoints into the correct format" do
       kafka_url = "kafka+ssl://192.168.1.100:9096,kafka+ssl://192.168.1.101:9096,kafka+ssl://192.168.1.102:9096"
-      expected = [{:"192.168.1.100", 9096}, {:"192.168.1.101", 9096}, {:"192.168.1.102", 9096}]
+      expected = [{'192.168.1.100', 9096}, {'192.168.1.101', 9096}, {'192.168.1.102', 9096}]
 
       assert Kaffe.Config.parse_endpoints(kafka_url) == expected
     end

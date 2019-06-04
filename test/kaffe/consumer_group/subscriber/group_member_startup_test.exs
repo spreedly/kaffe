@@ -33,7 +33,7 @@ defmodule Kaffe.GroupMemberStartupTest do
     Application.put_env(:kaffe, :consumer, Keyword.put(consumer_config, :subscriber_name, "s2"))
     {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link()
 
-    :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms + 100)
+    Process.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms + 100)
 
     assignments =
       Enum.reduce(0..31, %{}, fn _partition, map ->

@@ -5,8 +5,19 @@ defmodule Kaffe.Config do
     |> parse_endpoints()
   end
 
-  def parse_endpoints(endpoints) when is_list(endpoints), do: endpoints
+  @doc """
+  Transform the list of endpoints into a list of `{charlist, port}` tuples.
+  """
+  def parse_endpoints(endpoints) when is_list(endpoints) do
+    endpoints
+    |> Enum.map(fn {host, port} ->
+      {to_charlist(host), port}
+    end)
+  end
 
+  @doc """
+  Transform the encoded string into a list of `{charlist, port}` tuples.
+  """
   def parse_endpoints(url) when is_binary(url) do
     url
     |> String.replace("kafka+ssl://", "")
@@ -17,7 +28,7 @@ defmodule Kaffe.Config do
 
   def url_endpoint_to_tuple(endpoint) do
     [ip, port] = endpoint |> String.split(":")
-    {ip |> String.to_atom(), port |> String.to_integer()}
+    {ip |> String.to_charlist(), port |> String.to_integer()}
   end
 
   def sasl_config(%{mechanism: :plain, login: login, password: password})

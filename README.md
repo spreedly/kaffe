@@ -131,7 +131,7 @@ There is also legacy support for single message consumers, which process one mes
             }
           ]
 
-          opts = [strategy: :one_for_one, name: Sample.Supervisor]
+          opts = [strategy: :one_for_one, name: MyApp.Application.Supervisor]
           Supervisor.start_link(children, opts)
         end
       end
@@ -148,7 +148,7 @@ In some cases you may not want to commit back the most recent offset after proce
 Example:
 
 ```elixir
-defmodule MessageProcessor
+defmodule MessageProcessor do
   def handle_messages(messages) do
     for %{key: key, value: value} = message <- messages do
       IO.inspect message

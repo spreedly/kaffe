@@ -11,7 +11,7 @@ defmodule Kaffe.Config.ProducerTest do
       Application.put_env(:kaffe, :producer, no_sasl_config)
 
       expected = %{
-        endpoints: [kafka: 9092],
+        endpoints: [{'kafka', 9092}],
         producer_config: [
           auto_start_producers: true,
           allow_topic_auto_creation: false,
@@ -43,7 +43,7 @@ defmodule Kaffe.Config.ProducerTest do
       Application.put_env(:kaffe, :producer, sasl_config)
 
       expected = %{
-        endpoints: [kafka: 9092],
+        endpoints: [{'kafka', 9092}],
         producer_config: [
           auto_start_producers: true,
           allow_topic_auto_creation: false,
@@ -79,7 +79,7 @@ defmodule Kaffe.Config.ProducerTest do
     Application.put_env(:kaffe, :producer, Keyword.put(config, :endpoints, "kafka:9092,localhost:9092"))
 
     expected = %{
-      endpoints: [kafka: 9092, localhost: 9092],
+      endpoints: [{'kafka', 9092}, {'localhost', 9092}],
       producer_config: [
         auto_start_producers: true,
         allow_topic_auto_creation: false,
@@ -113,7 +113,7 @@ defmodule Kaffe.Config.ProducerTest do
     Application.put_env(:kaffe, :producer, Keyword.put(config, :ssl, true))
 
     expected = %{
-      endpoints: [kafka: 9092],
+      endpoints: [{'kafka', 9092}],
       producer_config: [
         auto_start_producers: true,
         allow_topic_auto_creation: false,
