@@ -21,6 +21,7 @@ defmodule Kaffe.Producer do
 
   @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
 
+  import Kaffe.Config, only: [parse_endpoints: 1]
   require Logger
 
   ## -------------------------------------------------------------------------
@@ -32,7 +33,7 @@ defmodule Kaffe.Producer do
     endpoints = Keyword.get(opts, :endpoints) || config().endpoints
     producer_config = Keyword.get(opts, :producer_config) || config().producer_config
 
-    @kafka.start_client(endpoints, client_name, producer_config)
+    @kafka.start_client(parse_endpoints(endpoints), client_name, producer_config)
   end
 
   @doc """
