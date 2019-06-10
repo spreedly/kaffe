@@ -39,7 +39,10 @@ defmodule Kaffe.WorkerTest do
   test "handle messages and commit back offset" do
     {:ok, worker_pid} = Worker.start_link(TestHandler, "subscriber_name", 0)
 
-    Worker.process_messages(worker_pid, self(), "topic", 1, 2, [%{key: :one, offset: 100}, %{key: :two, offset: 101}])
+    Worker.process_messages(worker_pid, self(), "topic", 1, 2, [
+      %{key: :one, offset: 100},
+      %{key: :two, offset: 101}
+    ])
 
     assert_receive {:handle_messages, [%{key: :one, offset: 100}, %{key: :two, offset: 101}]}
     assert_receive {:commit_offsets, {"topic", 1, 2, 101}}
@@ -49,7 +52,10 @@ defmodule Kaffe.WorkerTest do
   test "handle messages and maintain offset" do
     {:ok, worker_pid} = Worker.start_link(TestHandler, "subscriber_name", 0)
 
-    Worker.process_messages(worker_pid, self(), "topic", 1, 2, [%{key: :one, offset: 100}, %{key: :two, offset: 888}])
+    Worker.process_messages(worker_pid, self(), "topic", 1, 2, [
+      %{key: :one, offset: 100},
+      %{key: :two, offset: 888}
+    ])
 
     assert_receive {:handle_messages, [%{key: :one, offset: 100}, %{key: :two, offset: 888}]}
     refute_received {:commit_offsets, {"topic", 1, 2, 888}}
@@ -59,7 +65,10 @@ defmodule Kaffe.WorkerTest do
   test "handle messages and commit back specific offset" do
     {:ok, worker_pid} = Worker.start_link(TestHandler, "subscriber_name", 0)
 
-    Worker.process_messages(worker_pid, self(), "topic", 1, 2, [%{key: :one, offset: 100}, %{key: :two, offset: 999}])
+    Worker.process_messages(worker_pid, self(), "topic", 1, 2, [
+      %{key: :one, offset: 100},
+      %{key: :two, offset: 999}
+    ])
 
     assert_receive {:handle_messages, [%{key: :one, offset: 100}, %{key: :two, offset: 999}]}
     assert_receive {:commit_offsets, {"topic", 1, 2, 100}}

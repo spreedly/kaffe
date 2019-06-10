@@ -38,6 +38,11 @@ defmodule Kaffe.WorkerManagerTest do
 
   defp configure_strategy(strategy) do
     consumer_config = Application.get_env(:kaffe, :consumer)
-    Application.put_env(:kaffe, :consumer, Keyword.put(consumer_config, :worker_allocation_strategy, strategy))
+
+    Application.put_env(
+      :kaffe,
+      :consumer,
+      Keyword.put(consumer_config, :worker_allocation_strategy, strategy)
+    )
   end
 end

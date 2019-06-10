@@ -99,7 +99,12 @@ defmodule Kaffe.Consumer do
   """
   def init(_consumer_group, [config]) do
     start_consumer_client(config)
-    {:ok, %Kaffe.Consumer.State{message_handler: config.message_handler, async: config.async_message_ack}}
+
+    {:ok,
+     %Kaffe.Consumer.State{
+       message_handler: config.message_handler,
+       async: config.async_message_ack
+     }}
   end
 
   @doc """

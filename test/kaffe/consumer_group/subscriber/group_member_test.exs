@@ -25,7 +25,15 @@ defmodule Kaffe.GroupMemberTest do
   end
 
   defmodule TestSubscriber do
-    def subscribe(_subscriber_name, _group_coordinator_pid, _worker_pid, _gen_id, _topic, _partition, _ops) do
+    def subscribe(
+          _subscriber_name,
+          _group_coordinator_pid,
+          _worker_pid,
+          _gen_id,
+          _topic,
+          _partition,
+          _ops
+        ) do
       send(:test_case, {:subscriber, {:subscribe}})
       {:ok, self()}
     end
