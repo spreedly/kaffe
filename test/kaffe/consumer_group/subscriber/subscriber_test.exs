@@ -121,11 +121,8 @@ defmodule Kaffe.SubscriberTest do
     Enum.map(1..10, fn n ->
       Subscriber.kafka_message(
         offset: n,
-        magic_byte: 0,
-        attributes: 0,
         key: "key-#{n}",
-        value: "#{n}",
-        crc: -1
+        value: "#{n}"
       )
     end)
   end

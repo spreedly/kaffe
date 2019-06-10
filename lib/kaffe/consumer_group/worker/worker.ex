@@ -21,7 +21,10 @@ defmodule Kaffe.Worker do
   end
 
   def process_messages(pid, subscriber_pid, topic, partition, generation_id, messages) do
-    GenServer.cast(pid, {:process_messages, subscriber_pid, topic, partition, generation_id, messages})
+    GenServer.cast(
+      pid,
+      {:process_messages, subscriber_pid, topic, partition, generation_id, messages}
+    )
   end
 
   ## ==========================================================================

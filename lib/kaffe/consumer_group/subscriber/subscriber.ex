@@ -154,7 +154,11 @@ defmodule Kaffe.Subscriber do
   end
 
   def handle_cast({:commit_offsets, topic, partition, generation_id, offset}, state) do
-    Logger.debug("event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{generation_id}")
+    Logger.debug(
+      "event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{
+        generation_id
+      }"
+    )
 
     # Is this the ack we're looking for?
     ^topic = state.topic
@@ -188,7 +192,8 @@ defmodule Kaffe.Subscriber do
     {:noreply, %{state | subscriber_pid: subscriber_pid}}
   end
 
-  defp handle_subscribe({:error, reason}, %{retries_remaining: retries_remaining} = state) when retries_remaining > 0 do
+  defp handle_subscribe({:error, reason}, %{retries_remaining: retries_remaining} = state)
+       when retries_remaining > 0 do
     Logger.debug("Failed to subscribe with reason: #{inspect(reason)}, #{retries_remaining} retries remaining")
 
     Process.send_after(self(), {:subscribe_to_topic_partition}, retry_delay())

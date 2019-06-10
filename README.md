@@ -131,7 +131,7 @@ There is also legacy support for single message consumers, which process one mes
             }
           ]
 
-          opts = [strategy: :one_for_one, name: Sample.Supervisor]
+          opts = [strategy: :one_for_one, name: MyApp.Application.Supervisor]
           Supervisor.start_link(children, opts)
         end
       end
@@ -148,7 +148,7 @@ In some cases you may not want to commit back the most recent offset after proce
 Example:
 
 ```elixir
-defmodule MessageProcessor
+defmodule MessageProcessor do
   def handle_messages(messages) do
     for %{key: key, value: value} = message <- messages do
       IO.inspect message
@@ -289,6 +289,7 @@ config :kaffe,
 
     # optional
     partition_strategy: :md5,
+    ssl: true,
     sasl: %{
       mechanism: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),
@@ -305,7 +306,9 @@ The `partition_strategy` setting can be one of:
 
 You can also set any of the Brod producer configuration options in the `producer` section - see [the Brod sources](https://github.com/klarna/brod/blob/master/src/brod_producer.erl#L90) for a list of keys and their meaning.
 
-If kafka broker configured with `SASL_PLAINTEXT` auth, `sasl` option can be added
+If the Kafka broker is configured with `SASL_PLAINTEXT` auth, the `sasl` option can be added.
+
+If using Confluent Hosted Kafka, also add `ssl: true` as shown above.
 
 ## Heroku Configuration
 

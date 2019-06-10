@@ -8,7 +8,15 @@ defmodule Kaffe.GroupMemberStartupTest do
   @moduletag :e2e
 
   defmodule TestSubscriber do
-    def subscribe(subscriber_name, _group_coordinator_pid, _worker_pid, _gen_id, topic, partition, _ops) do
+    def subscribe(
+          subscriber_name,
+          _group_coordinator_pid,
+          _worker_pid,
+          _gen_id,
+          topic,
+          partition,
+          _ops
+        ) do
       send(:test_case, {:subscribe, subscriber_name, topic, partition})
       {:ok, self()}
     end
@@ -33,7 +41,7 @@ defmodule Kaffe.GroupMemberStartupTest do
     Application.put_env(:kaffe, :consumer, Keyword.put(consumer_config, :subscriber_name, "s2"))
     {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link()
 
-    :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms + 100)
+    Process.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms + 100)
 
     assignments =
       Enum.reduce(0..31, %{}, fn _partition, map ->
