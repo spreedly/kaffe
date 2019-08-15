@@ -57,7 +57,13 @@ defmodule Kaffe.GroupManager do
     Logger.info("event#startup=#{__MODULE__} name=#{name()}")
 
     config = Kaffe.Config.Consumer.configuration()
-    :ok = kafka().start_client(config.endpoints, config.subscriber_name, config.consumer_config)
+    case kafka().start_client(config.endpoints, config.subscriber_name, config.consumer_config) do
+      :ok ->
+        :ok
+
+      {_, :already_present} ->
+        Logger.info("The brod client is already present, continuing.")
+    end
 
     GenServer.cast(self(), {:start_group_members})
 
