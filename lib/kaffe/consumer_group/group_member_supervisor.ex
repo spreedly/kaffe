@@ -54,6 +54,9 @@ defmodule Kaffe.GroupMemberSupervisor do
 
   def init(:ok) do
     Logger.info("event#starting=#{__MODULE__}")
+    # Added sleep between GroupMemberSupervisor restarts so it doesn't
+    # reach max attempts and kill parent supervisor.
+    Process.sleep(5000)
 
     children = [
       worker(Kaffe.GroupManager, [])
