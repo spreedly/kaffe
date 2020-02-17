@@ -52,6 +52,18 @@ defmodule Kaffe.GroupMemberSupervisor do
     )
   end
 
+  def stop_group_member(
+        supervisor_pid,
+        subscriber_name,
+        topic
+      ) do
+    group_member_id = :"group_member_#{subscriber_name}_#{topic}"
+    :ok = Kaffe.GroupMember.stop_subscribers_and_workers(subscriber_name, topic)
+    :ok = Supervisor.terminate_child(supervisor_pid, group_member_id)
+    :ok = Supervisor.delete_child(supervisor_pid, group_member_id)
+    :ok
+  end
+
   def init(:ok) do
     Logger.info("event#starting=#{__MODULE__}")
 

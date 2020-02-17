@@ -73,6 +73,16 @@ defmodule Kaffe.GroupMember do
     GenServer.cast(pid, {:assignments_revoked})
   end
 
+  def stop_subscribers_and_workers(subscriber_name, topic) do
+    case Process.whereis(name(subscriber_name, topic)) do
+      nil ->
+        {:error, :not_found}
+
+      pid when is_pid(pid) ->
+        GenServer.call(pid, :stop_subscribers_and_workers)
+    end
+  end
+
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
@@ -89,12 +99,10 @@ defmodule Kaffe.GroupMember do
         self()
       )
 
-    Logger.info(
-      "event#init=#{__MODULE__}
+    Logger.info("event#init=#{__MODULE__}
        group_coordinator=#{inspect(pid)}
        subscriber_name=#{subscriber_name}
-       consumer_group=#{consumer_group}"
-    )
+       consumer_group=#{consumer_group}")
 
     {:ok,
      %State{
@@ -124,7 +132,8 @@ defmodule Kaffe.GroupMember do
   end
 
   # If we're not at the latest generation, discard the assignment for whatever is next.
-  def handle_info({:allocate_subscribers, gen_id, _assignments}, %{current_gen_id: current_gen_id} = state) when gen_id < current_gen_id do
+  def handle_info({:allocate_subscribers, gen_id, _assignments}, %{current_gen_id: current_gen_id} = state)
+      when gen_id < current_gen_id do
     Logger.debug("Discarding old generation #{gen_id} for current generation: #{current_gen_id}")
     {:noreply, state}
   end
@@ -163,6 +172,19 @@ defmodule Kaffe.GroupMember do
     {:noreply, %{state | :subscribers => subscribers}}
   end
 
+  def handle_call(:stop_subscribers_and_workers, _from, state) do
+    subscriber_mod = subscriber()
+    worker_manager_mod = worker_manager()
+
+    Enum.each(state.subscribers, fn s ->
+      %{topic: topic, partition: partition} = subscriber_mod.status(s)
+      :ok = worker_manager_mod.stop_worker_for(state.worker_manager_pid, topic, partition)
+      :ok = subscriber_mod.stop(s)
+    end)
+
+    {:reply, :ok, %{state | subscribers: []}}
+  end
+
   ## ==========================================================================
   ## Helpers
   ## ==========================================================================
@@ -175,6 +197,7 @@ defmodule Kaffe.GroupMember do
   defp compute_offset(:undefined, configured_offset) do
     [begin_offset: configured_offset]
   end
+
   defp compute_offset(offset, _configured_offset) do
     [begin_offset: offset]
   end

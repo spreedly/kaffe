@@ -25,6 +25,13 @@ defmodule Kaffe.WorkerSupervisor do
     )
   end
 
+  def stop_worker(pid, subscriber_name, worker_name) do
+    Logger.debug("Stopping worker: #{worker_name}")
+    worker_id = :"worker_#{subscriber_name}_#{worker_name}"
+    :ok = Supervisor.terminate_child(pid, worker_id)
+    :ok = Supervisor.delete_child(pid, worker_id)
+  end
+
   def init(subscriber_name) do
     Logger.info("event#startup=#{__MODULE__} subscriber_name=#{subscriber_name}")
 

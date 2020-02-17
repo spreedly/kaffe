@@ -44,6 +44,13 @@ defmodule Kaffe.GroupManager do
   end
 
   @doc """
+  Dynamically unsubscribe topics.
+  """
+  def unsubscribe_from_topics(topics) do
+    GenServer.call(name(), {:unsubscribe_from_topics, topics})
+  end
+
+  @doc """
   List of currently subscribed topics.
   """
   def list_subscribed_topics do
@@ -57,6 +64,7 @@ defmodule Kaffe.GroupManager do
     Logger.info("event#startup=#{__MODULE__} name=#{name()}")
 
     config = Kaffe.Config.Consumer.configuration()
+
     case kafka().start_client(config.endpoints, config.subscriber_name, config.consumer_config) do
       :ok ->
         :ok
@@ -85,7 +93,9 @@ defmodule Kaffe.GroupManager do
   def handle_cast({:start_group_members}, state) do
     Logger.debug("Starting worker supervisors for group manager: #{inspect(self())}")
 
-    {:ok, worker_supervisor_pid} = group_member_supervisor().start_worker_supervisor(state.supervisor_pid, state.subscriber_name)
+    {:ok, worker_supervisor_pid} =
+      group_member_supervisor().start_worker_supervisor(state.supervisor_pid, state.subscriber_name)
+
     {:ok, worker_manager_pid} = worker_supervisor().start_worker_manager(worker_supervisor_pid, state.subscriber_name)
 
     state = %State{state | worker_manager_pid: worker_manager_pid}
@@ -104,6 +114,20 @@ defmodule Kaffe.GroupManager do
     subscribe_to_topics(state, new_topics)
 
     {:reply, {:ok, new_topics}, %State{state | topics: state.topics ++ new_topics}}
+  end
+
+  @doc """
+  Unsubscribe from the given set of topics.
+  """
+  def handle_call({:unsubscribe_from_topics, requested_topics}, _from, %State{topics: topics} = state) do
+    old_topics =
+      requested_topics
+      |> Enum.into(MapSet.new())
+      |> MapSet.intersection(Enum.into(topics, MapSet.new()))
+      |> MapSet.to_list()
+
+    unsubscribe_from_topics(state, old_topics)
+    {:reply, {:ok, old_topics}, %State{state | topics: topics -- old_topics}}
   end
 
   @doc """
@@ -129,6 +153,21 @@ defmodule Kaffe.GroupManager do
       state.subscriber_name,
       state.consumer_group,
       state.worker_manager_pid,
+      topic
+    )
+  end
+
+  defp unsubscribe_from_topics(state, topics) do
+    for topic <- topics do
+      Logger.debug("Stopping group member for topic: #{topic}")
+      :ok = unsubscribe_from_topic(state, topic)
+    end
+  end
+
+  defp unsubscribe_from_topic(state, topic) do
+    group_member_supervisor().stop_group_member(
+      state.supervisor_pid,
+      state.subscriber_name,
       topic
     )
   end

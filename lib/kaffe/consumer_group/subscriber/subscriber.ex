@@ -69,6 +69,10 @@ defmodule Kaffe.Subscriber do
     GenServer.stop(subscriber_pid)
   end
 
+  def status(subscriber_pid) do
+    GenServer.call(subscriber_pid, :status)
+  end
+
   def commit_offsets(subscriber_pid, topic, partition, generation_id, offset) do
     GenServer.cast(subscriber_pid, {:commit_offsets, topic, partition, generation_id, offset})
   end
@@ -154,7 +158,11 @@ defmodule Kaffe.Subscriber do
   end
 
   def handle_cast({:commit_offsets, topic, partition, generation_id, offset}, state) do
-    Logger.debug("event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{generation_id}")
+    Logger.debug(
+      "event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{
+        generation_id
+      }"
+    )
 
     # Is this the ack we're looking for?
     ^topic = state.topic
@@ -180,6 +188,10 @@ defmodule Kaffe.Subscriber do
     :ok = kafka().consume_ack(state.subscriber_pid, offset)
 
     {:noreply, state}
+  end
+
+  def handle_call(:status, _, state) do
+    {:reply, Map.take(state, [:subscriber_name, :topic, :partition]), state}
   end
 
   defp handle_subscribe({:ok, subscriber_pid}, state) do

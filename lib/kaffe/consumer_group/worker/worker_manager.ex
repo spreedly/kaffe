@@ -34,6 +34,10 @@ defmodule Kaffe.WorkerManager do
     GenServer.call(pid, {:worker_for, topic, partition})
   end
 
+  def stop_worker_for(pid, topic, partition) do
+    GenServer.call(pid, {:stop_worker_for, topic, partition})
+  end
+
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
@@ -54,6 +58,16 @@ defmodule Kaffe.WorkerManager do
     Logger.debug("Allocating worker: #{topic} / #{partition}")
     worker_pid = allocate_worker(topic, partition, state)
     {:reply, worker_pid, state}
+  end
+
+  def handle_call({:stop_worker_for, topic, partition}, _from, state) do
+    Logger.debug("Stopping worker: #{topic} / #{partition}")
+
+    reply =
+      worker_name(topic, partition)
+      |> stop_worker(state)
+
+    {:reply, reply, state}
   end
 
   ## ==========================================================================
@@ -81,9 +95,25 @@ defmodule Kaffe.WorkerManager do
     |> capture_worker(worker_name, state)
   end
 
+  defp stop_worker(worker_name, state) do
+    Logger.debug("Stopping worker: #{worker_name}")
+
+    worker_supervisor().stop_worker(
+      state.supervisor_pid,
+      state.subscriber_name,
+      worker_name
+    )
+    |> forget_worker(worker_name, state)
+  end
+
   defp capture_worker({:ok, pid}, worker_name, %{worker_table: worker_table}) do
     true = :ets.insert(worker_table, {worker_name, pid})
     pid
+  end
+
+  defp forget_worker(:ok, worker_name, %{worker_table: worker_table}) do
+    true = :ets.delete(worker_table, worker_name)
+    :ok
   end
 
   def worker_name(topic, partition) do
