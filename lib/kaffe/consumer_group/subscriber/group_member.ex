@@ -73,13 +73,13 @@ defmodule Kaffe.GroupMember do
     GenServer.cast(pid, {:assignments_revoked})
   end
 
-  def stop_subscribers_and_workers(subscriber_name, topic) do
+  def stop_subscribers(subscriber_name, topic) do
     case Process.whereis(name(subscriber_name, topic)) do
       nil ->
         {:error, :not_found}
 
       pid when is_pid(pid) ->
-        GenServer.call(pid, :stop_subscribers_and_workers)
+        GenServer.call(pid, :stop_subscribers)
     end
   end
 
@@ -172,16 +172,8 @@ defmodule Kaffe.GroupMember do
     {:noreply, %{state | :subscribers => subscribers}}
   end
 
-  def handle_call(:stop_subscribers_and_workers, _from, state) do
-    subscriber_mod = subscriber()
-    worker_manager_mod = worker_manager()
-
-    Enum.each(state.subscribers, fn s ->
-      %{topic: topic, partition: partition} = subscriber_mod.status(s)
-      :ok = worker_manager_mod.stop_worker_for(state.worker_manager_pid, topic, partition)
-      :ok = subscriber_mod.stop(s)
-    end)
-
+  def handle_call(:stop_subscribers, _from, state) do
+    stop_subscribers(state.subscribers)
     {:reply, :ok, %{state | subscribers: []}}
   end
 

@@ -34,10 +34,6 @@ defmodule Kaffe.WorkerManager do
     GenServer.call(pid, {:worker_for, topic, partition})
   end
 
-  def stop_worker_for(pid, topic, partition) do
-    GenServer.call(pid, {:stop_worker_for, topic, partition})
-  end
-
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================

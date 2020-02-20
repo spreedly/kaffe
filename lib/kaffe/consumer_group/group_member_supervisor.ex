@@ -58,7 +58,7 @@ defmodule Kaffe.GroupMemberSupervisor do
         topic
       ) do
     group_member_id = :"group_member_#{subscriber_name}_#{topic}"
-    :ok = Kaffe.GroupMember.stop_subscribers_and_workers(subscriber_name, topic)
+    :ok = Kaffe.GroupMember.stop_subscribers(subscriber_name, topic)
     :ok = Supervisor.terminate_child(supervisor_pid, group_member_id)
     :ok = Supervisor.delete_child(supervisor_pid, group_member_id)
     :ok
