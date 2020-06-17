@@ -124,7 +124,14 @@ defmodule Kaffe.Producer do
     message_list
     |> add_timestamp
     |> group_by_partition(topic, partition_strategy)
-    |> produce_list_to_topic(topic)
+    |> case do
+      messages = %{} ->
+        produce_list_to_topic(messages, topic)
+
+      {:error, reason} ->
+        Logger.warn("Error while grouping by partition #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 
   defp produce_value(topic, key, value) do
@@ -153,12 +160,12 @@ defmodule Kaffe.Producer do
   end
 
   defp group_by_partition(messages, topic, partition_strategy) do
-    {:ok, partitions_count} = @kafka.get_partitions_count(client_name(), topic)
-
-    messages
-    |> Enum.group_by(fn {_timestamp, key, message} ->
-      choose_partition(topic, partitions_count, key, message, partition_strategy)
-    end)
+    with {:ok, partitions_count} <- @kafka.get_partitions_count(client_name(), topic) do
+      messages
+      |> Enum.group_by(fn {_timestamp, key, message} ->
+        choose_partition(topic, partitions_count, key, message, partition_strategy)
+      end)
+    end
   end
 
   defp produce_list_to_topic(message_list, topic) do
