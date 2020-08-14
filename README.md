@@ -1,10 +1,27 @@
 # Kaffe
 
-An opinionated, highly specific, Elixir wrapper around
-[Brod](https://github.com/klarna/brod): the Erlang Kafka client.
-:coffee:
+An opinionated, highly specific, Elixir wrapper around [Brod](https://github.com/klarna/brod): the Erlang Kafka client. :coffee:
 
 **NOTE**: Although we're using this in production at Spreedly it is still under active development. The API may change and there may be serious bugs we've yet to encounter.
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Installation](#installation)
+- [Kaffe Consumer Usage](#kaffe-consumer-usage)
+  - [Kaffe GroupMember - Batch Message Consumer](#kaffe-groupmember---batch-message-consumer)
+    - [Managing how offsets are committed](#managing-how-offsets-are-committed)
+  - [Kaffe Consumer - Single Message Consumer (Deprecated)](#kaffe-consumer---single-message-consumer-deprecated)
+    - [async message acknowledgement](#async-message-acknowledgement)
+- [Kaffe Producer Usage](#kaffe-producer-usage)
+- [Heroku Configuration](#heroku-configuration)
+- [Producing to Kafka](#producing-to-kafka)
+- [Testing](#testing)
+  - [Setup](#setup)
+  - [Running](#running)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Installation
 
@@ -56,44 +73,29 @@ There is also legacy support for single message consumers, which process one mes
     end
     ```
 
-2. The configuration options for the `GroupMember` consumer are a
-   superset of those for `Kaffe.Consumer`, except for
-   `:async_message_ack`, which is not supported. The additional options
-   are:
+2. The configuration options for the `GroupMember` consumer are a superset of those for `Kaffe.Consumer`, except for `:async_message_ack`, which is not supported. The additional options are:
 
-      `:rebalance_delay_ms` which is the time to allow for rebalancing
-      among workers. The default is 10,000, which should give the
-      consumers time to rebalance when scaling.
+	* `:rebalance_delay_ms` The time to allow for rebalancing among workers. The default is 10,000, which should give the consumers time to rebalance when scaling.
 
-      `:max_bytes` limits the number of message bytes received from Kafka
-      for a particular topic subscriber. The default is 1MB. This
-      parameter might need tuning depending on the number of partitions
-      in the topics being read (there is one subscriber per topic per
-      partition). For example, if you are reading from two topics, each
-      with 32 partitions, there is the potential of 64MB in buffered
-      messages at any one time.
+	* `:max_bytes` Limits the number of message bytes received from Kafka for a particular topic subscriber. The default is 1MB. This parameter might need tuning depending on the number of partitions in the topics being read (there is one subscriber per topic per partition). For example, if you are reading from two topics, each with 32 partitions, there is the potential of 64MB in buffered messages at any one time.
 
-      `:min_bytes` Sets a minimum threshold for the number of
-       bytes to fetch for a batch of messages. The default is 0MB.
+	* `:min_bytes` Sets a minimum threshold for the number of bytes to fetch for a batch of messages. The default is 0MB.
 
-      `:max_wait_time` Sets the maximum number of milliseconds that the
-      broker is allowed to collect min_bytes of messages in a batch of messages
+	* `:max_wait_time` Sets the maximum number of milliseconds that the broker is allowed to collect min_bytes of messages in a batch of messages.
+  
+	* `:offset_reset_policy` Controls how the subscriber handles an expired offset. See the Kafka consumer option, [`auto.offset.reset`](https://kafka.apache.org/documentation/#newconsumerconfigs). Valid values for this option are:
+    
+		* `:reset_to_earliest` Reset to the earliest available offset.
+		* `:reset_to_latest` Reset to the latest offset.
+		* `:reset_by_subscriber` The subscriber receives the `OffsetOutOfRange` error.
 
-      `:offset_reset_policy` controls how the subscriber handles an
-      expired offset. See the Kafka consumer option,
-      [`auto.offset.reset`](https://kafka.apache.org/documentation/#newconsumerconfigs).
-      Valid values for this option are:
+	More information in the [Brod consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
 
-      - `:reset_to_earliest` - reset to the earliest available offset
-      - `:reset_to_latest` - reset to the latest offset
-      - `:reset_by_subscriber` - The subscriber receives the `OffsetOutOfRange` error
-
-      More information in the [Brod
-      consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
-
-      `:worker_allocation_strategy` controls how workers are allocated with respect to consumed topics and partitions.
-      - `:worker_per_partition` - this is the default (for backward compatibilty) and allocates a single worker per partition across topics. This is useful for managing concurrent processing of messages that may be received from any consumed topic.
-      - `:worker_per_topic_partition` - this strategy allocates a worker per topic partition. This means there will be a worker for every topic partition consumed. Unless you need to control concurrency across topics, you should use this strategy.
+	* `:worker_allocation_strategy` Controls how workers are allocated with respect to consumed topics and partitions.
+  
+		* `:worker_per_partition` The default (for backward compatibilty) and allocates a single worker per partition across topics. This is useful for managing concurrent processing of messages that may be received from any consumed topic.
+  
+		* `:worker_per_topic_partition` This strategy allocates a worker per topic partition. This means there will be a worker for every topic partition consumed. Unless you need to control concurrency across topics, you should use this strategy.
 
       ```elixir
       config :kaffe,
@@ -115,8 +117,7 @@ There is also legacy support for single message consumers, which process one mes
         ],
       ```
 
-3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your
-   supervision tree
+3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your supervision tree.
 
       ```elixir
       defmodule MyApp.Application do
@@ -139,10 +140,12 @@ There is also legacy support for single message consumers, which process one mes
 
 #### Managing how offsets are committed
 
-In some cases you may not want to commit back the most recent offset after processing a list of messages. For example, if you're batching messages to be sent elsewhere and want to ensure that a batch can be rebuilt should there be an error further downstream. In that example you might want to keep the offset of the first message in your batch so your consumer can restart back at that point to reprocess and rebatch the messages. Your message handler can respond in the following ways to manage how offsets are committed back:
+In some cases you may not want to commit back the most recent offset after processing a list of messages. For example, if you're batching messages to be sent elsewhere and want to ensure that a batch can be rebuilt should there be an error further downstream. In that example you might want to keep the offset of the first message in your batch so your consumer can restart back at that point to reprocess and rebatch the messages.
+
+Your message handler can respond in the following ways to manage how offsets are committed back:
 
 `:ok` - commit back the most recent offset and request more messages
-`{:ok, :no_commit}` - do _not_ commit back the most recent offset and request more message from the offset of the last message
+`{:ok, :no_commit}` - do _not_ commit back the most recent offset and request more messages from the offset of the last message
 `{:ok, offset}` - commit back at the offset specified and request messages from that point forward
 
 Example:
@@ -161,11 +164,11 @@ end
 
 ### Kaffe Consumer - Single Message Consumer (Deprecated)
 
-_For backward compatiblitly only, you should use `Kaffe.GroupMemberSupervisor` instead!_
+_For backward compatibility only! `Kaffe.GroupMemberSupervisor` is recommended instead!_
 
 1. Add a `handle_message/1` function to a local module (e.g. `MessageProcessor`). This function will be called with each Kafka message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
-    The module's `handle_message/1` function _must_ return `:ok` or Kaffe will throw an error. In normal (synchronous consumer) operation the Kaffe consumer will block until your `handle_message/1` function returns `:ok`.
+	The module's `handle_message/1` function _must_ return `:ok` or Kaffe will throw an error. In normal (synchronous consumer) operation the Kaffe consumer will block until your `handle_message/1` function returns `:ok`.
 
     ### Example
 
@@ -212,7 +215,7 @@ _For backward compatiblitly only, you should use `Kaffe.GroupMemberSupervisor` i
       ],
     ```
 
-    The `start_with_earliest_message` field controls where your consumer group starts when it starts for the very first time. Once offsets have been committed to Kafka then they will supercede this option. If omitted then your consumer group will start processing from the most recent messages in the topic instead of consuming all available messages.
+    The `start_with_earliest_message` field controls where your consumer group starts when it starts for the very first time. Once offsets have been committed to Kafka then they will supercede this option. If omitted, your consumer group will start processing from the most recent messages in the topic instead of consuming all available messages.
 
     ### Heroku Configuration
 
@@ -269,7 +272,7 @@ If you need asynchronous message consumption:
       Kaffe.Consumer.ack(pid, message)
       ```
 
-**NOTE**: Asynchronous consumption means your system will no longer provide any backpressure to the Kaffe.Consumer. You will also need to add robust measures to your system to ensure that no messages are lost in processing. IE if you spawn 5 workers processing a series of asynchronous messages from Kafka and 1 of them crashes without acknowledgement then it's possible and likely that the message will be skipped entirely.
+**NOTE**: Asynchronous consumption means your system will no longer provide any backpressure to the Kaffe.Consumer. You will also need to add robust measures to your system to ensure that no messages are lost in processing. I.e., if you spawn 5 workers processing a series of asynchronous messages from Kafka and 1 of them crashes without acknowledgement then it's possible and likely that the message will be skipped entirely.
 
 Kafka only tracks a single numeric offset, not individual messages. If a message fails and a later offset is committed then the failed message will _not_ be sent again.
 
@@ -312,7 +315,7 @@ If using Confluent Hosted Kafka, also add `ssl: true` as shown above.
 
 ## Heroku Configuration
 
-To configure a Kaffe Producer for a Heroku Kafka compatible environment including SSL omit the `endpoint` and instead set `heroku_kafka_env: true`
+To configure a Kaffe Producer for a Heroku Kafka compatible environment, including SSL, omit the `endpoint` and instead set `heroku_kafka_env: true`
 
 ```elixir
 config :kaffe,
@@ -374,12 +377,11 @@ There are several ways to produce:
 
     **NOTE**: With this approach Kaffe will not calculate the next partition since it assumes you're taking over that job by giving it a specific partition.
 
-
 ## Testing
 
 ### Setup
 
-In order to run the end to end tests, a Kafka topic is required. It must:
+In order to run the end-to-end tests, a Kafka topic is required. It must:
 
 * be named `kaffe-test`
 * have 32 partitions
