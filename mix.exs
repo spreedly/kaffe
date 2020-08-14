@@ -4,13 +4,13 @@ defmodule Kaffe.Mixfile do
   def project do
     [
       app: :kaffe,
-      version: "1.17.0",
+      version: "1.18.0",
       description:
         "An opinionated Elixir wrapper around brod, the Erlang Kafka client, that supports encrypted connections to Heroku Kafka out of the box.",
       name: "Kaffe",
       source_url: "https://github.com/spreedly/kaffe",
       package: package(),
-      elixir: "~> 1.3",
+      elixir: "~> 1.7",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -28,7 +28,7 @@ defmodule Kaffe.Mixfile do
   defp deps do
     [
       {:brod, "~> 3.0"},
-      {:ex_doc, "~> 0.14", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.20", only: :dev, runtime: false},
     ]
   end
 
@@ -36,7 +36,7 @@ defmodule Kaffe.Mixfile do
     [
       name: :kaffe,
       licenses: ["MIT License"],
-      maintainers: ["Kevin Lewis", "David Santoso", "Ryan Daigle", "Spreedly"],
+      maintainers: ["Kevin Lewis", "David Santoso", "Ryan Daigle", "Spreedly", "Joe Peck"],
       links: %{"GitHub" => "https://github.com/spreedly/kaffe"}
     ]
   end
