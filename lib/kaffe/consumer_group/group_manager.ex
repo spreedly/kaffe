@@ -57,6 +57,7 @@ defmodule Kaffe.GroupManager do
     Logger.info("event#startup=#{__MODULE__} name=#{name()}")
 
     config = Kaffe.Config.Consumer.configuration()
+
     case kafka().start_client(config.endpoints, config.subscriber_name, config.consumer_config) do
       :ok ->
         :ok
@@ -85,7 +86,9 @@ defmodule Kaffe.GroupManager do
   def handle_cast({:start_group_members}, state) do
     Logger.debug("Starting worker supervisors for group manager: #{inspect(self())}")
 
-    {:ok, worker_supervisor_pid} = group_member_supervisor().start_worker_supervisor(state.supervisor_pid, state.subscriber_name)
+    {:ok, worker_supervisor_pid} =
+      group_member_supervisor().start_worker_supervisor(state.supervisor_pid, state.subscriber_name)
+
     {:ok, worker_manager_pid} = worker_supervisor().start_worker_manager(worker_supervisor_pid, state.subscriber_name)
 
     state = %State{state | worker_manager_pid: worker_manager_pid}
@@ -116,12 +119,58 @@ defmodule Kaffe.GroupManager do
   ## ==========================================================================
   ## Helpers
   ## ==========================================================================
-  defp subscribe_to_topics(state, topics) do
-    for topic <- topics do
-      Logger.debug("Starting group member for topic: #{topic}")
-      {:ok, _pid} = subscribe_to_topic(state, topic)
+
+  defp subscribe_to_topics(state, topics), do: subscribe_to_topics(state, topics, 0)
+
+  defp subscribe_to_topics(state, topics, attempt) do
+
+    # retry_topics list is filled with topics that received a :client_down error
+    # when attempting to connect. These topics al legiable for a reconnect attempt.
+    retry_topics =
+      Enum.reduce(topics, [], fn topic, acc ->
+        Logger.debug("Starting group member for topic: #{topic}")
+
+        case subscribe_to_topic(state, topic) do
+          {:ok, _pid} ->
+            acc
+
+          error ->
+            case is_client_down_error?(error) do
+              true ->
+                Logger.debug("Starting group member FAILED for topic: #{topic} REASON: client_down")
+                acc ++ [topic]
+
+              false ->
+                Logger.debug("Starting group member FAILED for topic: #{topic} REASON: #{inspect(error)}")
+                acc
+            end
+        end
+      end)
+
+    # We only pass retry_topics when there are topics legiable for a reconnect attempt
+    if Enum.count(retry_topics) > 0 do
+      retry_subscribe_to_topics?(retry_topics, state, client_down_retries(), attempt)
     end
   end
+
+  # A set of topics is attempted for reconnection when client was down during a previous attempt
+  # retry will be attempted if the amount of allowed retries is higher than the attempts.
+  defp retry_subscribe_to_topics?(topics, state, retries, attempts) when retries > attempts do
+    interval = client_down_retry_interval()
+    attempt = attempts + 1
+
+    Logger.debug(
+      "Starting group member failed for certain topics: attempt retry (#{attempt} of #{retries}) in #{
+        interval
+      } miliseconds"
+    )
+
+    Process.sleep(interval)
+    subscribe_to_topics(state, topics, attempt)
+  end
+
+  defp retry_subscribe_to_topics?(_topics, _state, retries, attempts) when retries <= attempts,
+    do: {:error, :client_down_no_reconnect}
 
   defp subscribe_to_topic(state, topic) do
     group_member_supervisor().start_group_member(
@@ -151,5 +200,30 @@ defmodule Kaffe.GroupManager do
 
   defp worker_supervisor do
     Application.get_env(:kaffe, :worker_supervisor_mod, Kaffe.WorkerSupervisor)
+  end
+
+  defp client_down_retries() do
+    Kaffe.Config.Consumer.configuration().client_down_retries
+  end
+
+  defp client_down_retry_interval() do
+    Kaffe.Config.Consumer.configuration().client_down_retry_interval
+  end
+
+  # Brod client errors are erlang exceptions and are hard to pattern match correctly.
+  # This function casts the error to a string, and returns if the error is a client down error
+  defp is_client_down_error?({:error, error}) do
+    error_string = "#{inspect(error)}"
+
+    cond do
+      String.match?(error_string, ~r(:econnrefused)) ->
+        true
+
+      String.match?(error_string, ~r({:error, :client_down})) ->
+        true
+
+      true ->
+        false
+      end
   end
 end
