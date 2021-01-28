@@ -19,9 +19,7 @@ defmodule Kaffe.Config.Consumer do
       subscriber_retry_delay_ms: subscriber_retry_delay_ms(),
       offset_reset_policy: offset_reset_policy(),
       worker_allocation_strategy: worker_allocation_strategy(),
-      client_down_retries: client_down_retries(),
-      client_down_retry_interval: client_down_retry_interval()
-
+      client_down_retry_expire: client_down_retry_expire()
     }
   end
 
@@ -113,12 +111,8 @@ defmodule Kaffe.Config.Consumer do
     config_get(:worker_allocation_strategy, :worker_per_partition)
   end
 
-  def client_down_retries do
-    config_get(:client_down_retries, 3)
-  end
-
-  def client_down_retry_interval do
-    config_get(:client_down_retry_interval, 10000)
+  def client_down_retry_expire do
+    config_get(:client_down_retry_expire, 30_000)
   end
 
   def maybe_heroku_kafka_ssl do

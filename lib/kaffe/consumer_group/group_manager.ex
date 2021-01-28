@@ -14,6 +14,7 @@ defmodule Kaffe.GroupManager do
   """
 
   use GenServer
+  use Retry
   require Logger
 
   defmodule State do
@@ -26,6 +27,14 @@ defmodule Kaffe.GroupManager do
               topics: nil,
               offset: nil,
               worker_manager_pid: nil
+  end
+
+  defmodule ClientDownException do
+    defexception [:message]
+
+    def exception(_term) do
+      %ClientDownException{message: "Kafka client is down"}
+    end
   end
 
   ## ==========================================================================
@@ -120,57 +129,40 @@ defmodule Kaffe.GroupManager do
   ## Helpers
   ## ==========================================================================
 
-  defp subscribe_to_topics(state, topics), do: subscribe_to_topics(state, topics, 0)
+  defp subscribe_to_topics(state, topics) do
+    Logger.debug("Starting group members for the following topics: #{inspect(topics)}")
 
-  defp subscribe_to_topics(state, topics, attempt) do
-
-    # retry_topics list is filled with topics that received a :client_down error
-    # when attempting to connect. These topics al legiable for a reconnect attempt.
-    retry_topics =
-      Enum.reduce(topics, [], fn topic, acc ->
-        Logger.debug("Starting group member for topic: #{topic}")
-
+    retry with: exponential_backoff() |> expiry(client_down_retry_expire()),
+          rescue_only: [Kaffe.GroupManager.ClientDownException] do
+      Enum.each(topics, fn topic ->
         case subscribe_to_topic(state, topic) do
           {:ok, _pid} ->
-            acc
+            Logger.debug("Started group member for topic: #{topic}")
+            :ok
 
           error ->
-            case is_client_down_error?(error) do
-              true ->
-                Logger.debug("Starting group member FAILED for topic: #{topic} REASON: client_down")
-                acc ++ [topic]
+            Logger.debug("Starting group member for #{topic} failed, attempting retry with exponential backoff")
 
-              false ->
-                Logger.debug("Starting group member FAILED for topic: #{topic} REASON: #{inspect(error)}")
-                acc
-            end
+            is_client_down_error?(error)
+            |> do_a_retry?(error)
         end
       end)
+    after
+      :ok ->
+        Logger.debug("Group members succesfully started")
+    else
+      {:error, reason} = error ->
+        Logger.error("Starting group members failed: #{inspect(reason)}")
+        error
 
-    # We only pass retry_topics when there are topics legiable for a reconnect attempt
-    if Enum.count(retry_topics) > 0 do
-      retry_subscribe_to_topics?(retry_topics, state, client_down_retries(), attempt)
+      _ = error ->
+        Logger.error("Starting group members failed: #{inspect(error)}")
+        {:error, error}
     end
   end
 
-  # A set of topics is attempted for reconnection when client was down during a previous attempt
-  # retry will be attempted if the amount of allowed retries is higher than the attempts.
-  defp retry_subscribe_to_topics?(topics, state, retries, attempts) when retries > attempts do
-    interval = client_down_retry_interval()
-    attempt = attempts + 1
-
-    Logger.debug(
-      "Starting group member failed for certain topics: attempt retry (#{attempt} of #{retries}) in #{
-        interval
-      } miliseconds"
-    )
-
-    Process.sleep(interval)
-    subscribe_to_topics(state, topics, attempt)
-  end
-
-  defp retry_subscribe_to_topics?(_topics, _state, retries, attempts) when retries <= attempts,
-    do: {:error, :client_down_no_reconnect}
+  defp do_a_retry?(true, error), do: raise(Kaffe.GroupManager.ClientDownException)
+  defp do_a_retry?(false, error), do: raise(error)
 
   defp subscribe_to_topic(state, topic) do
     group_member_supervisor().start_group_member(
@@ -202,12 +194,8 @@ defmodule Kaffe.GroupManager do
     Application.get_env(:kaffe, :worker_supervisor_mod, Kaffe.WorkerSupervisor)
   end
 
-  defp client_down_retries() do
-    Kaffe.Config.Consumer.configuration().client_down_retries
-  end
-
-  defp client_down_retry_interval() do
-    Kaffe.Config.Consumer.configuration().client_down_retry_interval
+  defp client_down_retry_expire() do
+    Kaffe.Config.Consumer.configuration().client_down_retry_expire
   end
 
   # Brod client errors are erlang exceptions and are hard to pattern match correctly.
@@ -224,6 +212,6 @@ defmodule Kaffe.GroupManager do
 
       true ->
         false
-      end
+    end
   end
 end
