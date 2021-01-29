@@ -161,7 +161,7 @@ defmodule Kaffe.GroupManager do
     end
   end
 
-  defp do_a_retry?(true, error), do: raise(Kaffe.GroupManager.ClientDownException)
+  defp do_a_retry?(true, _error), do: raise(Kaffe.GroupManager.ClientDownException)
   defp do_a_retry?(false, error), do: raise(error)
 
   defp subscribe_to_topic(state, topic) do
