@@ -16,6 +16,7 @@ config :kaffe,
     max_bytes: 10_000,
     subscriber_retries: 1,
     subscriber_retry_delay_ms: 5,
+    client_down_retry_expire: 15_000,
     sasl: %{
       mechanism: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),

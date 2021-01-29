@@ -43,7 +43,8 @@ defmodule Kaffe.Config.ConsumerTest do
         subscriber_retries: 1,
         subscriber_retry_delay_ms: 5,
         offset_reset_policy: :reset_by_subscriber,
-        worker_allocation_strategy: :worker_per_partition
+        worker_allocation_strategy: :worker_per_partition,
+        client_down_retry_expire: 15_000
       }
 
       assert Kaffe.Config.Consumer.configuration() == expected
@@ -77,7 +78,8 @@ defmodule Kaffe.Config.ConsumerTest do
         subscriber_retries: 1,
         subscriber_retry_delay_ms: 5,
         offset_reset_policy: :reset_by_subscriber,
-        worker_allocation_strategy: :worker_per_partition
+        worker_allocation_strategy: :worker_per_partition,
+        client_down_retry_expire: 15_000
       }
 
       on_exit(fn ->
@@ -119,7 +121,8 @@ defmodule Kaffe.Config.ConsumerTest do
       subscriber_retries: 1,
       subscriber_retry_delay_ms: 5,
       offset_reset_policy: :reset_by_subscriber,
-      worker_allocation_strategy: :worker_per_partition
+      worker_allocation_strategy: :worker_per_partition,
+      client_down_retry_expire: 15_000
     }
 
     on_exit(fn ->
@@ -160,7 +163,8 @@ defmodule Kaffe.Config.ConsumerTest do
       subscriber_retries: 1,
       subscriber_retry_delay_ms: 5,
       offset_reset_policy: :reset_by_subscriber,
-      worker_allocation_strategy: :worker_per_partition
+      worker_allocation_strategy: :worker_per_partition,
+      client_down_retry_expire: 15_000
     }
 
     on_exit(fn ->
