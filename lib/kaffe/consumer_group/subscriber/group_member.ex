@@ -36,7 +36,8 @@ defmodule Kaffe.GroupMember do
               worker_manager_pid: nil,
               topic: nil,
               configured_offset: nil,
-              current_gen_id: nil
+              current_gen_id: nil,
+              partitions_listener: nil
   end
 
   ## ==========================================================================
@@ -102,7 +103,8 @@ defmodule Kaffe.GroupMember do
        group_coordinator_pid: pid,
        consumer_group: consumer_group,
        worker_manager_pid: worker_manager_pid,
-       topic: topic
+       topic: topic,
+       partitions_listener: Kaffe.Config.Consumer.configuration().partitions_listener
      }}
   end
 
@@ -111,14 +113,14 @@ defmodule Kaffe.GroupMember do
   # configuration.
   def handle_cast({:assignments_received, gen_id, assignments}, state) do
     Logger.info("event#assignments_received=#{name(state.subscriber_name, state.topic)} generation_id=#{gen_id}")
-    partitions_listener().assigned(assignments)
+    state.partitions_listener.assigned(assignments)
     Process.send_after(self(), {:allocate_subscribers, gen_id, assignments}, rebalance_delay())
     {:noreply, %{state | current_gen_id: gen_id}}
   end
 
   def handle_cast({:assignments_revoked}, state) do
     Logger.info("event#assignments_revoked=#{name(state.subscriber_name, state.topic)}")
-    partitions_listener().revoked()
+    state.partitions_listener.revoked()
     stop_subscribers(state.subscribers)
     {:noreply, %{state | :subscribers => []}}
   end
