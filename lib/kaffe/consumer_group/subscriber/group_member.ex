@@ -111,14 +111,14 @@ defmodule Kaffe.GroupMember do
   # configuration.
   def handle_cast({:assignments_received, gen_id, assignments}, state) do
     Logger.info("event#assignments_received=#{name(state.subscriber_name, state.topic)} generation_id=#{gen_id}")
-
+    partitions_listener().assigned(assignments)
     Process.send_after(self(), {:allocate_subscribers, gen_id, assignments}, rebalance_delay())
     {:noreply, %{state | current_gen_id: gen_id}}
   end
 
   def handle_cast({:assignments_revoked}, state) do
     Logger.info("event#assignments_revoked=#{name(state.subscriber_name, state.topic)}")
-
+    partitions_listener().revoked()
     stop_subscribers(state.subscribers)
     {:noreply, %{state | :subscribers => []}}
   end
@@ -205,6 +205,10 @@ defmodule Kaffe.GroupMember do
 
   defp subscriber do
     Application.get_env(:kaffe, :subscriber_mod, Kaffe.Subscriber)
+  end
+
+  defp partitions_listener do
+    Application.get_env(:kaffe, :partitions_listener)
   end
 
   defp name(subscriber_name, topic) do
