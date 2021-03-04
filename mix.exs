@@ -19,7 +19,7 @@ defmodule Kaffe.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :brod], mod: {Kaffe, []}]
+    [applications: [:logger, :brod, :retry], mod: {Kaffe, []}]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
