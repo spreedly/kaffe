@@ -1,25 +1,29 @@
 defmodule Kaffe.Mixfile do
   use Mix.Project
 
+  @source_url "https://github.com/spreedly/kaffe"
+  @version "1.20.0"
+
   def project do
     [
       app: :kaffe,
-      version: "1.20.0",
-      description:
-        "An opinionated Elixir wrapper around brod, the Erlang Kafka client, that supports encrypted connections to Heroku Kafka out of the box.",
+      version: @version,
       name: "Kaffe",
-      source_url: "https://github.com/spreedly/kaffe",
-      package: package(),
       elixir: "~> 1.7",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
-      deps: deps()
+      deps: deps(),
+      docs: docs(),
+      package: package()
     ]
   end
 
   def application do
-    [applications: [:logger, :brod, :retry], mod: {Kaffe, []}]
+    [
+      applications: [:logger, :brod, :retry],
+      mod: {Kaffe, []}
+    ]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
@@ -28,7 +32,7 @@ defmodule Kaffe.Mixfile do
   defp deps do
     [
       {:brod, "~> 3.0"},
-      {:ex_doc, "~> 0.20", only: :dev, runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:retry, "~> 0.14.1"}
     ]
   end
@@ -36,9 +40,26 @@ defmodule Kaffe.Mixfile do
   defp package do
     [
       name: :kaffe,
-      licenses: ["MIT License"],
+      description:
+        "An opinionated Elixir wrapper around brod, the Erlang Kafka client, " <>
+          "that supports encrypted connections to Heroku Kafka out of the box.",
+      licenses: ["MIT"],
       maintainers: ["Kevin Lewis", "David Santoso", "Ryan Daigle", "Spreedly", "Joe Peck"],
-      links: %{"GitHub" => "https://github.com/spreedly/kaffe"}
+      links: %{
+        "GitHub" => @source_url
+      }
+    ]
+  end
+
+  defp docs do
+    [
+      extras: [
+        "LICENSE.md": [title: "License"],
+        "README.md": [title: "Overview"]
+      ],
+      main: "readme",
+      source_url: @source_url,
+      formatters: ["html"]
     ]
   end
 end

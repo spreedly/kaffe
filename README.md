@@ -1,5 +1,11 @@
 # Kaffe
 
+[![Module Version](https://img.shields.io/hexpm/v/kaffe.svg)](https://hex.pm/packages/kaffe)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/kaffe/)
+[![Total Download](https://img.shields.io/hexpm/dt/kaffe.svg)](https://hex.pm/packages/kaffe)
+[![License](https://img.shields.io/hexpm/l/kaffe.svg)](https://github.com/spreedly/kaffe/blob/master/LICENSE.md)
+[![Last Updated](https://img.shields.io/github/last-commit/spreedly/kaffe.svg)](https://github.com/spreedly/kaffe/commits/master)
+
 An opinionated, highly specific, Elixir wrapper around [Brod](https://github.com/klarna/brod): the Erlang Kafka client. :coffee:
 
 **NOTE**: Although we're using this in production at Spreedly it is still under active development. The API may change and there may be serious bugs we've yet to encounter.
@@ -82,9 +88,9 @@ There is also legacy support for single message consumers, which process one mes
 	* `:min_bytes` Sets a minimum threshold for the number of bytes to fetch for a batch of messages. The default is 0MB.
 
 	* `:max_wait_time` Sets the maximum number of milliseconds that the broker is allowed to collect min_bytes of messages in a batch of messages.
-  
+
 	* `:offset_reset_policy` Controls how the subscriber handles an expired offset. See the Kafka consumer option, [`auto.offset.reset`](https://kafka.apache.org/documentation/#newconsumerconfigs). Valid values for this option are:
-    
+
 		* `:reset_to_earliest` Reset to the earliest available offset.
 		* `:reset_to_latest` Reset to the latest offset.
 		* `:reset_by_subscriber` The subscriber receives the `OffsetOutOfRange` error.
@@ -92,9 +98,9 @@ There is also legacy support for single message consumers, which process one mes
 	More information in the [Brod consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
 
 	* `:worker_allocation_strategy` Controls how workers are allocated with respect to consumed topics and partitions.
-  
+
 		* `:worker_per_partition` The default (for backward compatibilty) and allocates a single worker per partition across topics. This is useful for managing concurrent processing of messages that may be received from any consumed topic.
-  
+
 		* `:worker_per_topic_partition` This strategy allocates a worker per topic partition. This means there will be a worker for every topic partition consumed. Unless you need to control concurrency across topics, you should use this strategy.
 
       ```elixir
@@ -303,7 +309,7 @@ config :kaffe,
 
 The `partition_strategy` setting can be one of:
 
-- `:md5`: (default) provides even and deterministic distrbution of the messages over the available partitions based on an MD5 hash of the key
+- `:md5`: (default) provides even and deterministic distribution of the messages over the available partitions based on an MD5 hash of the key
 - `:random`: select a random partition for each message
 - function: a given function to call to determine the correct partition
 
@@ -400,3 +406,9 @@ mix test
 # end to end test
 mix test --only e2e
 ```
+
+## Copyright and License
+
+Copyright (c) 2017 Spreedly, Inc.
+
+This software is released under the [MIT License](./LICENSE.md).
