@@ -19,7 +19,7 @@ defmodule Kaffe.WorkerSupervisor do
 
     Supervisor.start_child(
       pid,
-      worker(Kaffe.Worker, [message_handler, subscriber_name, worker_name],
+      worker(worker_mod(), [message_handler, subscriber_name, worker_name],
         id: :"worker_#{subscriber_name}_#{worker_name}"
       )
     )
@@ -38,5 +38,9 @@ defmodule Kaffe.WorkerSupervisor do
 
   defp name(subscriber_name) do
     :"#{__MODULE__}.#{subscriber_name}"
+  end
+
+  defp worker_mod do
+    Application.get_env(:kaffe, :worker_mod, Kaffe.Worker)
   end
 end
