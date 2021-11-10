@@ -91,7 +91,7 @@ defmodule Kaffe.Config.Consumer do
   def default_client_consumer_config do
     [
       auto_start_producers: false,
-      allow_topic_auto_creation: false,
+      allow_topic_auto_creation: true,
       begin_offset: begin_offset()
     ]
   end
