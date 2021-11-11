@@ -17,6 +17,7 @@ config :kaffe,
     subscriber_retries: 1,
     subscriber_retry_delay_ms: 5,
     client_down_retry_expire: 15_000,
+    allow_topic_auto_creation: true,
     sasl: %{
       mechanism: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),
@@ -26,6 +27,7 @@ config :kaffe,
   producer: [
     endpoints: [kafka: 9092],
     topics: ["kaffe-test"],
+    allow_topic_auto_creation: true,
     sasl: %{
       mechanism: :plain,
       login: System.get_env("KAFFE_PRODUCER_USER"),
