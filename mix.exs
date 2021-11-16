@@ -4,13 +4,13 @@ defmodule Kaffe.Mixfile do
   def project do
     [
       app: :kaffe,
-      version: "1.20.0",
+      version: "2.0.0",
       description:
         "An opinionated Elixir wrapper around brod, the Erlang Kafka client, that supports encrypted connections to Heroku Kafka out of the box.",
       name: "Kaffe",
       source_url: "https://github.com/spreedly/kaffe",
       package: package(),
-      elixir: "~> 1.7",
+      elixir: "~> 1.12",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),

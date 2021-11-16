@@ -15,9 +15,7 @@ defmodule Kaffe.Config do
     end)
   end
 
-  @doc """
-  Transform the encoded string into a list of `{charlist, port}` tuples.
-  """
+  # Transform the encoded string into a list of `{charlist, port}` tuples.
   def parse_endpoints(url) when is_binary(url) do
     url
     |> String.replace("kafka+ssl://", "")

@@ -61,17 +61,15 @@ defmodule Kaffe.Producer do
     produce_list(topic, message_list, global_partition_strategy())
   end
 
-  @doc """
-  Synchronously produce the given `key`/`value` to the first Kafka topic.
-
-  This is a simpler way to produce if you've only given Producer a single topic
-  for production and don't want to specify the topic for each call.
-
-  Returns:
-
-       * `:ok` on successfully producing the message
-       * `{:error, reason}` for any error
-  """
+  #  Synchronously produce the given `key`/`value` to the first Kafka topic.
+  #
+  #  This is a simpler way to produce if you've only given Producer a single topic
+  #  for production and don't want to specify the topic for each call.
+  #
+  #  Returns:
+  #
+  #       * `:ok` on successfully producing the message
+  #       * `{:error, reason}` for any error
   def produce_sync(key, value) do
     topic = config().topics |> List.first()
     produce_value(topic, key, value)
@@ -91,11 +89,10 @@ defmodule Kaffe.Producer do
     produce_list(topic, message_list, fn _, _, _, _ -> partition end)
   end
 
-  @doc """
-  Synchronously produce the `key`/`value` to `topic`
 
-  See `produce_sync/2` for returns.
-  """
+  #  Synchronously produce the `key`/`value` to `topic`
+  #
+  #  See `produce_sync/2` for returns.
   def produce_sync(topic, key, value) do
     produce_value(topic, key, value)
   end

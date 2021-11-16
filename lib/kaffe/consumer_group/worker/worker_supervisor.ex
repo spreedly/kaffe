@@ -11,7 +11,8 @@ defmodule Kaffe.WorkerSupervisor do
   end
 
   def start_worker_manager(pid, subscriber_name) do
-    Supervisor.start_child(pid, worker(Kaffe.WorkerManager, [subscriber_name]))
+    link = Supervisor.start_link({Kaffe.WorkerManager, [subscriber_name]}, [])
+    Supervisor.start_child(pid, link)
   end
 
   def start_worker(pid, message_handler, subscriber_name, worker_name) do
@@ -19,7 +20,7 @@ defmodule Kaffe.WorkerSupervisor do
 
     Supervisor.start_child(
       pid,
-      worker(Kaffe.Worker, [message_handler, subscriber_name, worker_name],
+      Supervisor.start_link({Kaffe.Worker, [message_handler, subscriber_name, worker_name]},
         id: :"worker_#{subscriber_name}_#{worker_name}"
       )
     )
@@ -33,7 +34,7 @@ defmodule Kaffe.WorkerSupervisor do
     # If anything fails, the state is inconsistent with the state of
     # `Kaffe.Subscriber` and `Kaffe.GroupMember`. We need the failure
     # to cascade all the way up so that they are terminated.
-    supervise(children, strategy: :one_for_all, max_restarts: 0, max_seconds: 1)
+    Supervisor.start_link(children, strategy: :one_for_all, max_restarts: 0, max_seconds: 1)
   end
 
   defp name(subscriber_name) do

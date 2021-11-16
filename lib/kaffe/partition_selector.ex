@@ -25,7 +25,7 @@ defmodule Kaffe.PartitionSelector do
   end
 
   def random(total) do
-    :crypto.rand_uniform(0, total)
+    :rand.uniform(total) - 1
   end
 
   def md5(key, total) do

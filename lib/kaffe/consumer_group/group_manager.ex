@@ -40,6 +40,10 @@ defmodule Kaffe.GroupManager do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
+  def start_link(_) do
+    start_link()
+  end
+
   def start_link() do
     GenServer.start_link(__MODULE__, [self()], name: name())
   end
@@ -118,9 +122,7 @@ defmodule Kaffe.GroupManager do
     {:reply, {:ok, new_topics}, %State{state | topics: state.topics ++ new_topics}}
   end
 
-  @doc """
-  List the currently subscribed topics
-  """
+  # List the currently subscribed topics
   def handle_call({:list_subscribed_topics}, _from, %State{topics: topics} = state) do
     {:reply, topics, state}
   end
