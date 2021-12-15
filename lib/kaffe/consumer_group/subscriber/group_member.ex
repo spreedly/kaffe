@@ -89,12 +89,10 @@ defmodule Kaffe.GroupMember do
         self()
       )
 
-    Logger.info(
-      "event#init=#{__MODULE__}
+    Logger.info("event#init=#{__MODULE__}
        group_coordinator=#{inspect(pid)}
        subscriber_name=#{subscriber_name}
-       consumer_group=#{consumer_group}"
-    )
+       consumer_group=#{consumer_group}")
 
     {:ok,
      %State{
@@ -124,7 +122,8 @@ defmodule Kaffe.GroupMember do
   end
 
   # If we're not at the latest generation, discard the assignment for whatever is next.
-  def handle_info({:allocate_subscribers, gen_id, _assignments}, %{current_gen_id: current_gen_id} = state) when gen_id < current_gen_id do
+  def handle_info({:allocate_subscribers, gen_id, _assignments}, %{current_gen_id: current_gen_id} = state)
+      when gen_id < current_gen_id do
     Logger.debug("Discarding old generation #{gen_id} for current generation: #{current_gen_id}")
     {:noreply, state}
   end
@@ -175,6 +174,7 @@ defmodule Kaffe.GroupMember do
   defp compute_offset(:undefined, configured_offset) do
     [begin_offset: configured_offset]
   end
+
   defp compute_offset(offset, _configured_offset) do
     [begin_offset: offset]
   end

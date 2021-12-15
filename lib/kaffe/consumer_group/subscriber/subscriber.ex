@@ -134,9 +134,7 @@ defmodule Kaffe.Subscriber do
 
   def handle_info({_pid, {:kafka_fetch_error, topic, partition, code, reason} = error}, state) do
     Logger.info(
-      "event#kafka_fetch_error=#{inspect(self())} topic=#{topic} partition=#{partition} code=#{inspect(code)} reason=#{
-        inspect(reason)
-      }"
+      "event#kafka_fetch_error=#{inspect(self())} topic=#{topic} partition=#{partition} code=#{inspect(code)} reason=#{inspect(reason)}"
     )
 
     {:stop, {:shutdown, error}, state}
@@ -154,7 +152,9 @@ defmodule Kaffe.Subscriber do
   end
 
   def handle_cast({:commit_offsets, topic, partition, generation_id, offset}, state) do
-    Logger.debug("event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{generation_id}")
+    Logger.debug(
+      "event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{generation_id}"
+    )
 
     # Is this the ack we're looking for?
     ^topic = state.topic
