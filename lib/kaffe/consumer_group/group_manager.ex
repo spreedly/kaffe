@@ -102,7 +102,7 @@ defmodule Kaffe.GroupManager do
 
     state = %State{state | worker_manager_pid: worker_manager_pid}
 
-    subscribe_to_topics(state, state.topics)
+    :ok = subscribe_to_topics(state, state.topics)
 
     {:noreply, state}
   end
@@ -113,7 +113,7 @@ defmodule Kaffe.GroupManager do
   """
   def handle_call({:subscribe_to_topics, requested_topics}, _from, %State{topics: topics} = state) do
     new_topics = requested_topics -- topics
-    subscribe_to_topics(state, new_topics)
+    :ok = subscribe_to_topics(state, new_topics)
 
     {:reply, {:ok, new_topics}, %State{state | topics: state.topics ++ new_topics}}
   end
