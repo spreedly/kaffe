@@ -55,6 +55,7 @@ jobs:
       #   run: |
       #     mix credo --all --strict
       - name: Check formatting
+        if: matrix.elixir != '1.7.4'
         run: |
           mix format --check-formatted
       # - name: Dialyzer
