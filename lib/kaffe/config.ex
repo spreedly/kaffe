@@ -35,6 +35,14 @@ defmodule Kaffe.Config do
       when not is_nil(password) and not is_nil(login),
       do: [sasl: {:plain, login, password}]
 
+  def sasl_config(%{mechanism: :scram_sha_256, login: login, password: password})
+      when not is_nil(password) and not is_nil(login),
+      do: [sasl: {:scram_sha_256, login, password}]
+
+  def sasl_config(%{mechanism: :scram_sha_512, login: login, password: password})
+      when not is_nil(password) and not is_nil(login),
+      do: [sasl: {:scram_sha_512, login, password}]
+
   def sasl_config(_), do: []
 
   def ssl_config do
