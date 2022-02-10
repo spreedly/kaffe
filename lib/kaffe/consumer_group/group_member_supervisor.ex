@@ -32,7 +32,14 @@ defmodule Kaffe.GroupMemberSupervisor do
   end
 
   def start_worker_supervisor(supervisor_pid, subscriber_name) do
-    Supervisor.start_child(supervisor_pid, supervisor(Kaffe.WorkerSupervisor, [subscriber_name]))
+    Supervisor.start_child(
+      supervisor_pid,
+      %{
+        id: :"Kaffe.WorkerSupervisor.#{subscriber_name}",
+        start: {Kaffe.WorkerSupervisor, :start_link, [subscriber_name]},
+        type: :supervisor
+      }
+    )
   end
 
   def start_group_member(
@@ -44,11 +51,14 @@ defmodule Kaffe.GroupMemberSupervisor do
       ) do
     Supervisor.start_child(
       supervisor_pid,
-      worker(
-        Kaffe.GroupMember,
-        [subscriber_name, consumer_group, worker_manager_pid, topic],
-        id: :"group_member_#{subscriber_name}_#{topic}"
-      )
+      %{
+        id: :"group_member_#{subscriber_name}_#{topic}",
+        start: {
+          Kaffe.GroupMember,
+          :start_link,
+          [subscriber_name, consumer_group, worker_manager_pid, topic]
+        }
+      }
     )
   end
 
@@ -56,11 +66,14 @@ defmodule Kaffe.GroupMemberSupervisor do
     Logger.info("event#starting=#{__MODULE__}")
 
     children = [
-      worker(Kaffe.GroupManager, [])
+      %{
+        id: Kaffe.GroupManager,
+        start: {Kaffe.GroupManager, :start_link, []}
+      }
     ]
 
     # If we get a failure, we need to reset so the states are all consistent.
-    supervise(children, strategy: :one_for_all, max_restarts: 0, max_seconds: 1)
+    Supervisor.init(children, strategy: :one_for_all, max_restarts: 0, max_seconds: 1)
   end
 
   defp name do
