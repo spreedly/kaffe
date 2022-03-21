@@ -315,7 +315,7 @@ The `partition_strategy` setting can be one of:
 
 You can also set any of the Brod producer configuration options in the `producer` section - see [the Brod sources](https://github.com/klarna/brod/blob/master/src/brod_producer.erl#L90) for a list of keys and their meaning.
 
-If the Kafka broker is configured with `SASL_PLAINTEXT` auth, the `sasl` option can be added.
+If the Kafka broker is configured with `SASL_PLAINTEXT` auth, the `sasl` option can be added. Kaffe supports the following SASL mechanisms - PLAINTEXT, SCRAM_SHA_256 and SCRAM_SHA_512
 
 If using Confluent Hosted Kafka, also add `ssl: true` as shown above.
 
