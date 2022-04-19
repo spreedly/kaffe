@@ -21,6 +21,25 @@ defmodule Kaffe.Producer do
 
   @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
 
+  @typedoc """
+  A Kafka message can be represented as a tuple containing a key value pair of type binary()
+  """
+  @type message :: {key :: binary(), value :: binary()}
+
+  @typedoc """
+  A Kafka message can also be represented as a map, containing `:key`, `:value`, and `:headers`
+  """
+  @type message_object :: %{
+          key: key :: binary(),
+          value: value :: binary(),
+          headers: headers :: headers()
+        }
+
+  @typedoc """
+  Headers represent a list of tuples containing key, value pairs of type binary()
+  """
+  @type headers :: [{key :: binary(), value :: binary()}]
+
   require Logger
 
   ## -------------------------------------------------------------------------
@@ -34,7 +53,7 @@ defmodule Kaffe.Producer do
   @doc """
   Synchronously produce the `messages_list` to `topic`
 
-  - `messages_list` must be a list of `{key, value}` tuples
+  - `messages_list` must be a list of type `message()` or `message_object()`
   - `opts` may include the partition strategy to use,
     `partition_strategy: :md5`, or `:random` or a function.
 
@@ -50,7 +69,7 @@ defmodule Kaffe.Producer do
   @doc """
   Synchronously produce the `message_list` to `topic`
 
-  `messages` must be a list of `{key, value}` tuples
+  `messages` must be a list of type `message()` or `message_object()`
 
   Returns:
 
@@ -80,7 +99,7 @@ defmodule Kaffe.Producer do
   @doc """
   Synchronously produce the `message_list` to `topic`/`partition`
 
-  `message_list` must be a list of `{key, value}` tuples
+  `message_list` must be a list of type `message()` or `message_type()`
 
   Returns:
 
@@ -148,16 +167,25 @@ defmodule Kaffe.Producer do
 
   defp add_timestamp(messages) do
     messages
-    |> Enum.map(fn {key, message} ->
-      {System.system_time(:millisecond), key, message}
-    end)
+    |> Enum.map(&add_timestamp_to_message/1)
   end
+
+  defp add_timestamp_to_message(message) when is_map(message) and not :erlang.is_map_key(:ts, message),
+    do: message |> Map.put(:ts, System.system_time(:millisecond))
+
+  defp add_timestamp_to_message(message) when is_map(message), do: message
+
+  defp add_timestamp_to_message({key, message}), do: {System.system_time(:millisecond), key, message}
 
   defp group_by_partition(messages, topic, partition_strategy) do
     with {:ok, partitions_count} <- @kafka.get_partitions_count(client_name(), topic) do
       messages
-      |> Enum.group_by(fn {_timestamp, key, message} ->
-        choose_partition(topic, partitions_count, key, message, partition_strategy)
+      |> Enum.group_by(fn
+        {_timestamp, key, message} ->
+          choose_partition(topic, partitions_count, key, message, partition_strategy)
+
+        %{key: key, value: message} ->
+          choose_partition(topic, partitions_count, key, message, partition_strategy)
       end)
     end
   end
