@@ -50,6 +50,10 @@ defmodule Kaffe.Producer do
     @kafka.start_client(config().endpoints, client_name(), config().producer_config)
   end
 
+  def stop_producer_client(client_name \\ client_name()) do
+    @kafka.stop_client(client_name)
+  end
+
   @doc """
   Synchronously produce the `messages_list` to `topic`
 
@@ -139,7 +143,9 @@ defmodule Kaffe.Producer do
     |> add_timestamp
     |> group_by_partition(topic, partition_strategy)
     |> case do
-      messages = %{} -> produce_list_to_topic(messages, topic)
+      messages = %{} ->
+        produce_list_to_topic(messages, topic)
+
       {:error, reason} ->
         Logger.warn("Error while grouping by partition #{inspect(reason)}")
         {:error, reason}
@@ -156,10 +162,9 @@ defmodule Kaffe.Producer do
         )
 
         @kafka.produce_sync(client_name(), topic, partition, key, value)
+
       error ->
-        Logger.warn(
-          "event#produce topic=#{topic} key=#{key} error=#{inspect(error)}"
-        )
+        Logger.warn("event#produce topic=#{topic} key=#{key} error=#{inspect(error)}")
 
         error
     end
