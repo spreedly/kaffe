@@ -26,8 +26,8 @@ defmodule Kaffe.WorkerManager do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
-  def start_link(subscriber_name) do
-    GenServer.start_link(__MODULE__, [self(), subscriber_name], name: name(subscriber_name))
+  def start_link({subscriber_name, config}) do
+    GenServer.start_link(__MODULE__, [self(), subscriber_name, config], name: name(subscriber_name))
   end
 
   def worker_for(pid, topic, partition) do
@@ -37,7 +37,7 @@ defmodule Kaffe.WorkerManager do
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
-  def init([supervisor_pid, subscriber_name]) do
+  def init([supervisor_pid, subscriber_name, config]) do
     Logger.info("event#starting=#{__MODULE__} subscriber_name=#{subscriber_name} supervisor=#{inspect(supervisor_pid)}")
 
     worker_table = :ets.new(:kaffe_workers, [:set, :protected])
@@ -46,7 +46,8 @@ defmodule Kaffe.WorkerManager do
      %{
        supervisor_pid: supervisor_pid,
        subscriber_name: subscriber_name,
-       worker_table: worker_table
+       worker_table: worker_table,
+       config: config
      }}
   end
 
@@ -60,7 +61,7 @@ defmodule Kaffe.WorkerManager do
   ## Helpers
   ## ==========================================================================
   defp allocate_worker(topic, partition, %{worker_table: worker_table} = state) do
-    worker_name = worker_name(topic, partition)
+    worker_name = worker_name(topic, partition, state.config.worker_allocation_strategy)
 
     case :ets.lookup(worker_table, worker_name) do
       [{^worker_name, worker_pid}] -> worker_pid
@@ -69,7 +70,7 @@ defmodule Kaffe.WorkerManager do
   end
 
   defp start_worker(worker_name, state) do
-    config = Kaffe.Config.Consumer.configuration()
+    config = state.config
     Logger.debug("Creating worker: #{worker_name}")
 
     worker_supervisor().start_worker(
@@ -86,15 +87,11 @@ defmodule Kaffe.WorkerManager do
     pid
   end
 
-  def worker_name(topic, partition) do
-    case worker_allocation_strategy() do
+  def worker_name(topic, partition, worker_allocation_strategy) do
+    case worker_allocation_strategy do
       :worker_per_partition -> :"worker_#{partition}"
       :worker_per_topic_partition -> :"worker_#{topic}_#{partition}"
     end
-  end
-
-  defp worker_allocation_strategy do
-    Kaffe.Config.Consumer.configuration().worker_allocation_strategy
   end
 
   defp worker_supervisor do

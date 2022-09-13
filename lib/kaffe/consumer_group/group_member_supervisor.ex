@@ -27,8 +27,9 @@ defmodule Kaffe.GroupMemberSupervisor do
   use Supervisor
   require Logger
 
-  def start_link do
-    Supervisor.start_link(__MODULE__, :ok, name: name())
+  def start_link(config_idx) do
+    IO.inspect(config_idx, label: "config_idx")
+    Supervisor.start_link(__MODULE__, config_idx, name: name(config_idx))
   end
 
   def start_worker_supervisor(supervisor_pid, subscriber_name) do
@@ -47,7 +48,8 @@ defmodule Kaffe.GroupMemberSupervisor do
         subscriber_name,
         consumer_group,
         worker_manager_pid,
-        topic
+        topic,
+        config_idx
       ) do
     Supervisor.start_child(
       supervisor_pid,
@@ -56,19 +58,19 @@ defmodule Kaffe.GroupMemberSupervisor do
         start: {
           Kaffe.GroupMember,
           :start_link,
-          [subscriber_name, consumer_group, worker_manager_pid, topic]
+          [subscriber_name, consumer_group, worker_manager_pid, topic, config_idx]
         }
       }
     )
   end
 
-  def init(:ok) do
+  def init(config_idx) do
     Logger.info("event#starting=#{__MODULE__}")
 
     children = [
       %{
         id: Kaffe.GroupManager,
-        start: {Kaffe.GroupManager, :start_link, []}
+        start: {Kaffe.GroupManager, :start_link, [config_idx]}
       }
     ]
 
@@ -76,11 +78,11 @@ defmodule Kaffe.GroupMemberSupervisor do
     Supervisor.init(children, strategy: :one_for_all, max_restarts: 0, max_seconds: 1)
   end
 
-  defp name do
-    :"#{__MODULE__}.#{subscriber_name()}"
+  defp name(config_idx) do
+    :"#{__MODULE__}.#{subscriber_name(config_idx)}"
   end
 
-  defp subscriber_name do
-    Kaffe.Config.Consumer.configuration().subscriber_name
+  defp subscriber_name(config_idx) do
+    Kaffe.Config.Consumer.configuration(config_idx).subscriber_name
   end
 end
