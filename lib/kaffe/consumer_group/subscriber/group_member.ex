@@ -43,7 +43,7 @@ defmodule Kaffe.GroupMember do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
-  def start_link(subscriber_name, consumer_group, worker_manager_pid, topic, config_idx) do
+  def start_link(subscriber_name, consumer_group, worker_manager_pid, topic, config) do
     GenServer.start_link(
       __MODULE__,
       [
@@ -51,7 +51,7 @@ defmodule Kaffe.GroupMember do
         consumer_group,
         worker_manager_pid,
         topic,
-        config_idx
+        config
       ],
       name: name(subscriber_name, topic)
     )
@@ -78,9 +78,8 @@ defmodule Kaffe.GroupMember do
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
-  def init([subscriber_name, consumer_group, worker_manager_pid, topic, config_idx]) do
+  def init([subscriber_name, consumer_group, worker_manager_pid, topic, config]) do
     :ok = kafka().start_consumer(subscriber_name, topic, [])
-    config = Kaffe.Config.Consumer.configuration(config_idx)
 
     {:ok, pid} =
       group_coordinator().start_link(
