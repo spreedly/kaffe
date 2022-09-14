@@ -28,7 +28,6 @@ defmodule Kaffe.GroupMemberSupervisor do
   require Logger
 
   def start_link(config_idx) do
-    IO.inspect(config_idx, label: "config_idx")
     config = Kaffe.Config.Consumer.configuration(config_idx)
     Supervisor.start_link(__MODULE__, config, name: name(config))
   end

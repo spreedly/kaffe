@@ -126,15 +126,19 @@ defmodule Kaffe.Config.Consumer do
     config_get(idx, :heroku_kafka_env, false)
   end
 
+  def config_get!(idx, :subscriber_name), do: idx
+
   def config_get!(idx, key) do
     Application.get_env(:kaffe, :consumers)
-    |> Enum.at(idx)
+    |> Map.get(idx)
     |> Keyword.fetch!(key)
   end
 
+  def config_get(idx, :subscriber_name, _default), do: idx
+
   def config_get(idx, key, default) do
     Application.get_env(:kaffe, :consumers)
-    |> Enum.at(idx)
+    |> Map.get(idx)
     |> Keyword.get(key, default)
   end
 end
