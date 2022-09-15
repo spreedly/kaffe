@@ -1,5 +1,6 @@
 defmodule Kaffe.Config.Consumer do
   import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1]
+  require Logger
 
   def configuration(idx) do
     %{
@@ -140,5 +141,24 @@ defmodule Kaffe.Config.Consumer do
     Application.get_env(:kaffe, :consumers)
     |> Map.get(idx)
     |> Keyword.get(key, default)
+  end
+
+  def validate_configuration!() do
+    if Application.get_env(:kaffe, :consumers) == nil do
+      old_config = Application.get_env(:kaffe, :consumer) || []
+      subscriber_name = old_config |> Keyword.get(:subscriber_name, "subscriber_name")
+
+      raise("""
+      UPDATE CONSUMERS CONFIG:
+
+      Set :kaffe, :consumers to a map with subscriber names as keys and config as values.
+      For example:
+
+      config :kaffe,
+        consumers: %{
+          #{inspect(subscriber_name)} => #{inspect(old_config)}
+        }
+      """)
+    end
   end
 end
