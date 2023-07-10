@@ -2,14 +2,14 @@ defmodule Kaffe.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/spreedly/kaffe"
-  @version "1.22.0"
+  @version "1.23.0"
 
   def project do
     [
       app: :kaffe,
       version: @version,
       name: "Kaffe",
-      elixir: "~> 1.7",
+      elixir: "~> 1.12",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -44,7 +44,7 @@ defmodule Kaffe.Mixfile do
         "An opinionated Elixir wrapper around brod, the Erlang Kafka client, " <>
           "that supports encrypted connections to Heroku Kafka out of the box.",
       licenses: ["MIT"],
-      maintainers: ["Kevin Lewis", "David Santoso", "Ryan Daigle", "Spreedly", "Joe Peck", "Brittany Hayes"],
+      maintainers: ["Kevin Lewis", "David Santoso", "Ryan Daigle", "Spreedly", "Joe Peck", "Brittany Hayes", "Anthony Walker"],
       links: %{
         "GitHub" => @source_url
       }
