@@ -15,8 +15,8 @@ defmodule Kaffe.Consumer do
 
   @behaviour :brod_group_subscriber
 
-  @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
-  @group_subscriber Application.get_env(:kaffe, :group_subscriber_mod, :brod_group_subscriber)
+  @kafka Application.compile_env(:kaffe, :kafka_mod, :brod)
+  @group_subscriber Application.compile_env(:kaffe, :group_subscriber_mod, :brod_group_subscriber)
 
   require Record
   import Record, only: [defrecord: 2, extract: 2]
