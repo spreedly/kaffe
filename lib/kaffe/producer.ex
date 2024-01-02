@@ -141,7 +141,7 @@ defmodule Kaffe.Producer do
     |> case do
       messages = %{} -> produce_list_to_topic(messages, topic)
       {:error, reason} ->
-        Logger.warn("Error while grouping by partition #{inspect(reason)}")
+        Logger.warning("Error while grouping by partition #{inspect(reason)}")
         {:error, reason}
     end
   end
@@ -157,7 +157,7 @@ defmodule Kaffe.Producer do
 
         @kafka.produce_sync(client_name(), topic, partition, key, value)
       error ->
-        Logger.warn(
+        Logger.warning(
           "event#produce topic=#{topic} key=#{key} error=#{inspect(error)}"
         )
 
