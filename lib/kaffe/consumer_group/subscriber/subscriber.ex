@@ -144,12 +144,12 @@ defmodule Kaffe.Subscriber do
 
   def handle_info({:DOWN, _ref, _process, pid, reason}, %{subscriber_pid: subscriber_pid} = state)
       when pid == subscriber_pid do
-    Logger.warn("event#consumer_down=#{inspect(self())} reason=#{inspect(reason)}")
+    Logger.warning("event#consumer_down=#{inspect(self())} reason=#{inspect(reason)}")
     {:stop, {:shutdown, {:consumer_down, reason}}, state}
   end
 
   def handle_info(unknown, state) do
-    Logger.warn("event#unknown_message=#{inspect(self())} reason=#{inspect(unknown)}")
+    Logger.warning("event#unknown_message=#{inspect(self())} reason=#{inspect(unknown)}")
     {:noreply, state}
   end
 
@@ -196,7 +196,7 @@ defmodule Kaffe.Subscriber do
   end
 
   defp handle_subscribe({:error, reason}, state) do
-    Logger.warn("event#subscribe_failed=#{inspect(self())} reason=#{inspect(reason)}")
+    Logger.warning("event#subscribe_failed=#{inspect(self())} reason=#{inspect(reason)}")
     {:stop, {:subscribe_failed, :retries_exceeded, reason}, state}
   end
 

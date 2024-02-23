@@ -57,12 +57,12 @@ defmodule Kaffe.GroupMember do
 
   # Should not receive this
   def get_committed_offsets(_group_member_pid, _topic_partitions) do
-    Logger.warn("event#get_committed_offsets")
+    Logger.warning("event#get_committed_offsets")
   end
 
   # Should not receive this
   def assign_partitions(_pid, _members, _topic_partitions) do
-    Logger.warn("event#assign_partitions")
+    Logger.warning("event#assign_partitions")
   end
 
   def assignments_received(pid, _member_id, generation_id, assignments) do
