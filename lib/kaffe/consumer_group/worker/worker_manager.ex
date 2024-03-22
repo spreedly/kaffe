@@ -26,7 +26,7 @@ defmodule Kaffe.WorkerManager do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
-  def start_link({subscriber_name, config}) do
+  def start_link([subscriber_name, config]) do
     GenServer.start_link(__MODULE__, [self(), subscriber_name, config], name: name(subscriber_name))
   end
 

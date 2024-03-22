@@ -16,14 +16,14 @@ defmodule Kaffe.GroupManagerTest do
       {:ok, self()}
     end
 
-    def start_group_member(_supervisor_pid, _subscriber_name, _consumer_group, _worker_manager_pid, topic) do
+    def start_group_member(_supervisor_pid, _subscriber_name, _consumer_group, _worker_manager_pid, topic, _config) do
       send(:test_case, {:start_group_member, topic})
       {:ok, self()}
     end
   end
 
   defmodule TestWorkerSupervisor do
-    def start_worker_manager(_pid, _subscriber_name) do
+    def start_worker_manager(_pid, _subscriber_name, _config) do
       send(:test_case, {:start_worker_manager})
       {:ok, self()}
     end
@@ -37,25 +37,25 @@ defmodule Kaffe.GroupManagerTest do
 
   test "subscribe from config" do
     Process.register(self(), :test_case)
+    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    {:ok, _group_manager_pid} = GroupManager.start_link(config)
 
-    {:ok, _group_manager_pid} = GroupManager.start_link()
-
-    :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms)
+    :timer.sleep(config.rebalance_delay_ms)
 
     assert_receive {:start_client}
     assert_receive {:start_worker_supervisor}
     assert_receive {:start_worker_manager}
     assert_receive {:start_group_member, "kaffe-test"}
 
-    assert ["kaffe-test"] == GroupManager.list_subscribed_topics()
+    assert ["kaffe-test"] == GroupManager.list_subscribed_topics(config)
   end
 
   test "subscribe to topics dynamically" do
     Process.register(self(), :test_case)
+    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    {:ok, _group_manager_pid} = GroupManager.start_link(config)
 
-    {:ok, _group_manager_pid} = GroupManager.start_link()
-
-    :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms)
+    :timer.sleep(config.rebalance_delay_ms)
 
     # startup
     assert_receive {:start_client}
@@ -64,20 +64,20 @@ defmodule Kaffe.GroupManagerTest do
     assert_receive {:start_group_member, "kaffe-test"}
 
     # subscribe to new topics
-    GroupManager.subscribe_to_topics(["so-interesting", "such-random"])
+    GroupManager.subscribe_to_topics({config, ["so-interesting", "such-random"]})
 
     assert_receive {:start_group_member, "so-interesting"}
     assert_receive {:start_group_member, "such-random"}
 
-    assert [] == GroupManager.list_subscribed_topics() -- ["kaffe-test", "so-interesting", "such-random"]
+    assert [] == GroupManager.list_subscribed_topics(config) -- ["kaffe-test", "so-interesting", "such-random"]
   end
 
   test "duplicate topic subscription does nothing" do
     Process.register(self(), :test_case)
+    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    {:ok, _group_manager_pid} = GroupManager.start_link(config)
 
-    {:ok, _group_manager_pid} = GroupManager.start_link()
-
-    :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms)
+    :timer.sleep(config.rebalance_delay_ms)
 
     # startup
     assert_receive {:start_client}
@@ -86,15 +86,15 @@ defmodule Kaffe.GroupManagerTest do
     assert_receive {:start_group_member, "kaffe-test"}
 
     # subscribe to new topics
-    GroupManager.subscribe_to_topics(["so-interesting", "such-random"])
+    GroupManager.subscribe_to_topics({config, ["so-interesting", "such-random"]})
 
     assert_receive {:start_group_member, "so-interesting"}
     assert_receive {:start_group_member, "such-random"}
 
-    GroupManager.subscribe_to_topics(["so-interesting"])
+    GroupManager.subscribe_to_topics({config, ["so-interesting"]})
 
     refute_receive {:start_group_member, "so-interesting"}
 
-    assert [] == GroupManager.list_subscribed_topics() -- ["kaffe-test", "so-interesting", "such-random"]
+    assert [] == GroupManager.list_subscribed_topics(config) -- ["kaffe-test", "so-interesting", "such-random"]
   end
 end

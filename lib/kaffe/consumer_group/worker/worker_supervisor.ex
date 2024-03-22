@@ -13,7 +13,7 @@ defmodule Kaffe.WorkerSupervisor do
   def start_worker_manager(pid, subscriber_name, config) do
     Supervisor.start_child(
       pid,
-      {Kaffe.WorkerManager, {subscriber_name, config}}
+      {Kaffe.WorkerManager, [subscriber_name, config]}
     )
   end
 
