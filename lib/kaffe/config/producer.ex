@@ -47,7 +47,7 @@ defmodule Kaffe.Config.Producer do
   def default_client_producer_config do
     [
       auto_start_producers: true,
-      allow_topic_auto_creation: false,
+      allow_topic_auto_creation: config_get(:allow_topic_auto_creation, false),
       default_producer_config: [
         required_acks: config_get(:required_acks, -1),
         ack_timeout: config_get(:ack_timeout, 1000),

@@ -14,7 +14,7 @@ defmodule Kaffe.Config.ProducerTest do
         endpoints: [{'kafka', 9092}],
         producer_config: [
           auto_start_producers: true,
-          allow_topic_auto_creation: false,
+          allow_topic_auto_creation: true,
           default_producer_config: [
             required_acks: -1,
             ack_timeout: 1000,
@@ -46,7 +46,7 @@ defmodule Kaffe.Config.ProducerTest do
         endpoints: [{'kafka', 9092}],
         producer_config: [
           auto_start_producers: true,
-          allow_topic_auto_creation: false,
+          allow_topic_auto_creation: true,
           default_producer_config: [
             required_acks: -1,
             ack_timeout: 1000,
@@ -82,7 +82,7 @@ defmodule Kaffe.Config.ProducerTest do
       endpoints: [{'kafka', 9092}, {'localhost', 9092}],
       producer_config: [
         auto_start_producers: true,
-        allow_topic_auto_creation: false,
+        allow_topic_auto_creation: true,
         default_producer_config: [
           required_acks: -1,
           ack_timeout: 1000,
@@ -116,7 +116,7 @@ defmodule Kaffe.Config.ProducerTest do
       endpoints: [{'kafka', 9092}],
       producer_config: [
         auto_start_producers: true,
-        allow_topic_auto_creation: false,
+        allow_topic_auto_creation: true,
         default_producer_config: [
           required_acks: -1,
           ack_timeout: 1000,
