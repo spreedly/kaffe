@@ -10,6 +10,7 @@ defmodule Kaffe.Config.Consumer do
       group_config: consumer_group_config(),
       consumer_config: client_consumer_config(),
       message_handler: message_handler(),
+      partitions_listener: partitions_listener(),
       async_message_ack: async_message_ack(),
       rebalance_delay_ms: rebalance_delay_ms(),
       max_bytes: max_bytes(),
@@ -30,6 +31,8 @@ defmodule Kaffe.Config.Consumer do
   def topics, do: config_get!(:topics)
 
   def message_handler, do: config_get!(:message_handler)
+
+  def partitions_listener, do: config_get!(:partitions_listener)
 
   def async_message_ack, do: config_get(:async_message_ack, false)
 
