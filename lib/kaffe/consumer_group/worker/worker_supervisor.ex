@@ -10,10 +10,10 @@ defmodule Kaffe.WorkerSupervisor do
     Supervisor.start_link(__MODULE__, subscriber_name, name: name(subscriber_name))
   end
 
-  def start_worker_manager(pid, subscriber_name) do
+  def start_worker_manager(pid, subscriber_name, config) do
     Supervisor.start_child(
       pid,
-      {Kaffe.WorkerManager, subscriber_name}
+      {Kaffe.WorkerManager, [subscriber_name, config]}
     )
   end
 

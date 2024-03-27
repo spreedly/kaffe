@@ -1,7 +1,7 @@
 defmodule TestBrod do
   use GenServer
 
-  @test_partition_count Application.get_env(:kaffe, :test_partition_count)
+  @test_partition_count Application.compile_env(:kaffe, :test_partition_count)
 
   require Logger
 

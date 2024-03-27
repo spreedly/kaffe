@@ -25,15 +25,15 @@ defmodule Kaffe.GroupMemberStartupTest do
   test "startup" do
     Process.register(self(), :test_case)
 
-    consumer_config = Application.get_env(:kaffe, :consumer)
-    Application.put_env(:kaffe, :consumer, Keyword.put(consumer_config, :subscriber_name, "s1"))
-    {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link()
+    consumer_config = Application.get_env(:kaffe, :consumers) |> Map.keys |> List.first
+    Application.put_env(:kaffe, :consumer, %{"s1" => consumer_config})
+    {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link("s1")
 
     consumer_config = Application.get_env(:kaffe, :consumer)
-    Application.put_env(:kaffe, :consumer, Keyword.put(consumer_config, :subscriber_name, "s2"))
-    {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link()
+    Application.put_env(:kaffe, :consumer, %{"s2" => consumer_config})
+    {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link("s2")
 
-    Process.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms + 100)
+    Process.sleep(consumer_config.rebalance_delay_ms + 100)
 
     assignments =
       Enum.reduce(0..31, %{}, fn _partition, map ->

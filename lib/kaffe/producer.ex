@@ -19,7 +19,7 @@ defmodule Kaffe.Producer do
   Currently only synchronous production is supported.
   """
 
-  @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
+  @kafka Application.compile_env(:kaffe, :kafka_mod, :brod)
 
   @typedoc """
   A Kafka message can be represented as a tuple containing a key value pair of type binary()

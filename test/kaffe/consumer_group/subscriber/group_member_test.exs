@@ -25,7 +25,7 @@ defmodule Kaffe.GroupMemberTest do
   end
 
   defmodule TestSubscriber do
-    def subscribe(_subscriber_name, _group_coordinator_pid, _worker_pid, _gen_id, _topic, _partition, _ops) do
+    def subscribe(_subscriber_name, _group_coordinator_pid, _worker_pid, _gen_id, _topic, _partition, _ops, _config) do
       send(:test_case, {:subscriber, {:subscribe}})
       {:ok, self()}
     end
@@ -44,12 +44,12 @@ defmodule Kaffe.GroupMemberTest do
 
   test "handle assignments_received" do
     Process.register(self(), :test_case)
-
-    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic")
+    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic", config)
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
 
-    :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms)
+    :timer.sleep(config.rebalance_delay_ms)
 
     assert_receive {:start_consumer}
     assert_receive {:group_coordinator_start_link}
@@ -59,12 +59,12 @@ defmodule Kaffe.GroupMemberTest do
 
   test "handle assignments_revoked" do
     Process.register(self(), :test_case)
-
-    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic")
+    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic", config)
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
 
-    :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms)
+    :timer.sleep(config.rebalance_delay_ms)
 
     GroupMember.assignments_revoked(pid)
 
@@ -77,12 +77,12 @@ defmodule Kaffe.GroupMemberTest do
 
   test "handle assignments_received without assignments_revoked" do
     Process.register(self(), :test_case)
-
-    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic")
+    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic", config)
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
 
-    :timer.sleep(Kaffe.Config.Consumer.configuration().rebalance_delay_ms)
+    :timer.sleep(config.rebalance_delay_ms)
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 1, 1}])
 
