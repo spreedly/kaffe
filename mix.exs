@@ -31,7 +31,7 @@ defmodule Kaffe.Mixfile do
 
   defp deps do
     [
-      {:brod, "~> 3.0"},
+      {:brod, "~> 4.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:retry, "~> 0.15.0"}
     ]
@@ -44,7 +44,15 @@ defmodule Kaffe.Mixfile do
         "An opinionated Elixir wrapper around brod, the Erlang Kafka client, " <>
           "that supports encrypted connections to Heroku Kafka out of the box.",
       licenses: ["MIT"],
-      maintainers: ["Kevin Lewis", "David Santoso", "Ryan Daigle", "Spreedly", "Joe Peck", "Brittany Hayes", "Anthony Walker"],
+      maintainers: [
+        "Kevin Lewis",
+        "David Santoso",
+        "Ryan Daigle",
+        "Spreedly",
+        "Joe Peck",
+        "Brittany Hayes",
+        "Anthony Walker"
+      ],
       links: %{
         "GitHub" => @source_url
       }
