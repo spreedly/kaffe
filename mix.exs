@@ -31,7 +31,7 @@ defmodule Kaffe.Mixfile do
 
   defp deps do
     [
-      {:brod, "~> 3.0"},
+      {:brod, "~> 3.0 or ~> 4.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:retry, "~> 0.15.0"}
     ]
