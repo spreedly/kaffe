@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :kaffe,
   kafka_mod: TestBrod,

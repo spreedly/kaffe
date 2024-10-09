@@ -9,7 +9,7 @@ defmodule Kaffe.Mixfile do
       app: :kaffe,
       version: @version,
       name: "Kaffe",
-      elixir: "~> 1.12",
+      elixir: "~> 1.14",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
