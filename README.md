@@ -115,11 +115,11 @@ There is also legacy support for single message consumers, which process one mes
           worker_allocation_strategy: :worker_per_topic_partition,
 
           #optional
-          sasl: %{
+	  sasl: %{
             mechanism: :plain,
-            login: System.get_env("KAFFE_PRODUCER_USER"),
-            password: System.get_env("KAFFE_PRODUCER_PASSWORD")
-          }
+	    user: System.get_env("KAFFE_PRODUCER_USER"),
+	    password: System.get_env("KAFFE_PRODUCER_PASSWORD")
+	  }
         ],
       ```
 
@@ -301,7 +301,7 @@ config :kaffe,
     ssl: true,
     sasl: %{
       mechanism: :plain,
-      login: System.get_env("KAFFE_PRODUCER_USER"),
+      user: System.get_env("KAFFE_PRODUCER_USER"),
       password: System.get_env("KAFFE_PRODUCER_PASSWORD")
     }
   ]
