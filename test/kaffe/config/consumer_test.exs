@@ -31,7 +31,7 @@ defmodule Kaffe.Config.ConsumerTest do
         ],
         consumer_config: [
           auto_start_producers: false,
-          allow_topic_auto_creation: false,
+          allow_topic_auto_creation: true,
           begin_offset: :earliest
         ],
         message_handler: SilentMessage,
@@ -66,7 +66,7 @@ defmodule Kaffe.Config.ConsumerTest do
         ],
         consumer_config: [
           auto_start_producers: false,
-          allow_topic_auto_creation: false,
+          allow_topic_auto_creation: true,
           begin_offset: :earliest
         ],
         message_handler: SilentMessage,
@@ -108,7 +108,7 @@ defmodule Kaffe.Config.ConsumerTest do
       ],
       consumer_config: [
         auto_start_producers: false,
-        allow_topic_auto_creation: false,
+        allow_topic_auto_creation: true,
         begin_offset: :earliest,
         sasl: {:plain, "Alice", "ecilA"}
       ],
@@ -150,7 +150,7 @@ defmodule Kaffe.Config.ConsumerTest do
       ],
       consumer_config: [
         auto_start_producers: false,
-        allow_topic_auto_creation: false,
+        allow_topic_auto_creation: true,
         begin_offset: :earliest,
         ssl: true
       ],
