@@ -8,7 +8,7 @@ defmodule Kaffe.GroupMemberStartupTest do
   @moduletag :e2e
 
   defmodule TestSubscriber do
-    def subscribe(subscriber_name, _group_coordinator_pid, _worker_pid, _gen_id, topic, partition, _ops) do
+    def subscribe(subscriber_name, _group_coordinator_pid, _worker_pid, _gen_id, topic, partition, _ops, _config) do
       send(:test_case, {:subscribe, subscriber_name, topic, partition})
       {:ok, self()}
     end
@@ -24,16 +24,19 @@ defmodule Kaffe.GroupMemberStartupTest do
   # Start two consumers and verify that they receive different partition assignments
   test "startup" do
     Process.register(self(), :test_case)
+    # Retrieve the consumer config
+    consumer_config = Application.get_env(:kaffe, :consumers) |> Map.values() |> List.first()
 
-    consumer_config = Application.get_env(:kaffe, :consumers) |> Map.keys |> List.first
-    Application.put_env(:kaffe, :consumer, %{"s1" => consumer_config})
+    # Set configuration for two consumers
+    Application.put_env(:kaffe, :consumers, %{"s1" => consumer_config, "s2" => consumer_config})
+
+    # Set up the first consumer
     {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link("s1")
 
-    consumer_config = Application.get_env(:kaffe, :consumer)
-    Application.put_env(:kaffe, :consumer, %{"s2" => consumer_config})
+    # Set up the second consumer
     {:ok, _pid} = Kaffe.GroupMemberSupervisor.start_link("s2")
 
-    Process.sleep(consumer_config.rebalance_delay_ms + 100)
+    Process.sleep(consumer_config[:rebalance_delay_ms] + 100)
 
     assignments =
       Enum.reduce(0..31, %{}, fn _partition, map ->
