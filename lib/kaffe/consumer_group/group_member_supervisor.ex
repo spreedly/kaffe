@@ -27,9 +27,9 @@ defmodule Kaffe.GroupMemberSupervisor do
   use Supervisor
   require Logger
 
-  def start_link(config_idx) do
+  def start_link(config_key) do
     Kaffe.Config.Consumer.validate_configuration!()
-    config = Kaffe.Config.Consumer.configuration(config_idx)
+    config = Kaffe.Config.Consumer.configuration(config_key)
     Supervisor.start_link(__MODULE__, config, name: name(config))
   end
 

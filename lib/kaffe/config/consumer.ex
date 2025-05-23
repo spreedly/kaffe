@@ -2,144 +2,146 @@ defmodule Kaffe.Config.Consumer do
   import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1]
   require Logger
 
-  def configuration(idx) do
+  def configuration(config_key) do
     %{
-      endpoints: endpoints(idx),
-      subscriber_name: subscriber_name(idx),
-      consumer_group: consumer_group(idx),
-      topics: topics(idx),
-      group_config: consumer_group_config(idx),
-      consumer_config: client_consumer_config(idx),
-      message_handler: message_handler(idx),
-      async_message_ack: async_message_ack(idx),
-      rebalance_delay_ms: rebalance_delay_ms(idx),
-      max_bytes: max_bytes(idx),
-      min_bytes: min_bytes(idx),
-      max_wait_time: max_wait_time(idx),
-      subscriber_retries: subscriber_retries(idx),
-      subscriber_retry_delay_ms: subscriber_retry_delay_ms(idx),
-      offset_reset_policy: offset_reset_policy(idx),
-      worker_allocation_strategy: worker_allocation_strategy(idx),
-      client_down_retry_expire: client_down_retry_expire(idx)
+      endpoints: endpoints(config_key),
+      subscriber_name: subscriber_name(config_key),
+      consumer_group: consumer_group(config_key),
+      topics: topics(config_key),
+      group_config: consumer_group_config(config_key),
+      consumer_config: client_consumer_config(config_key),
+      message_handler: message_handler(config_key),
+      async_message_ack: async_message_ack(config_key),
+      rebalance_delay_ms: rebalance_delay_ms(config_key),
+      max_bytes: max_bytes(config_key),
+      min_bytes: min_bytes(config_key),
+      max_wait_time: max_wait_time(config_key),
+      subscriber_retries: subscriber_retries(config_key),
+      subscriber_retry_delay_ms: subscriber_retry_delay_ms(config_key),
+      offset_reset_policy: offset_reset_policy(config_key),
+      worker_allocation_strategy: worker_allocation_strategy(config_key),
+      client_down_retry_expire: client_down_retry_expire(config_key)
     }
   end
 
-  def consumer_group(idx), do: config_get!(idx, :consumer_group)
+  def consumer_group(config_key), do: config_get!(config_key, :consumer_group)
 
-  def subscriber_name(idx), do: config_get(idx, :subscriber_name, consumer_group(idx)) |> String.to_atom()
+  def subscriber_name(config_key),
+    do: config_get(config_key, :subscriber_name, consumer_group(config_key)) |> String.to_atom()
 
-  def topics(idx), do: config_get!(idx, :topics)
+  def topics(config_key), do: config_get!(config_key, :topics)
 
-  def message_handler(idx), do: config_get!(idx, :message_handler)
+  def message_handler(config_key), do: config_get!(config_key, :message_handler)
 
-  def async_message_ack(idx), do: config_get(idx, :async_message_ack, false)
+  def async_message_ack(config_key), do: config_get(config_key, :async_message_ack, false)
 
-  def endpoints(idx) do
-    if heroku_kafka?(idx) do
+  def endpoints(config_key) do
+    if heroku_kafka?(config_key) do
       heroku_kafka_endpoints()
     else
-      parse_endpoints(config_get!(idx, :endpoints))
+      parse_endpoints(config_get!(config_key, :endpoints))
     end
   end
 
-  def consumer_group_config(idx) do
+  def consumer_group_config(config_key) do
     [
       offset_commit_policy: :commit_to_kafka_v2,
-      offset_commit_interval_seconds: config_get(idx, :offset_commit_interval_seconds, 5)
+      offset_commit_interval_seconds: config_get(config_key, :offset_commit_interval_seconds, 5)
     ]
   end
 
-  def rebalance_delay_ms(idx) do
-    config_get(idx, :rebalance_delay_ms, 10_000)
+  def rebalance_delay_ms(config_key) do
+    config_get(config_key, :rebalance_delay_ms, 10_000)
   end
 
-  def max_bytes(idx) do
-    config_get(idx, :max_bytes, 1_000_000)
+  def max_bytes(config_key) do
+    config_get(config_key, :max_bytes, 1_000_000)
   end
 
-  def min_bytes(idx) do
-    config_get(idx, :min_bytes, 0)
+  def min_bytes(config_key) do
+    config_get(config_key, :min_bytes, 0)
   end
 
-  def max_wait_time(idx) do
-    config_get(idx, :max_wait_time, 10_000)
+  def max_wait_time(config_key) do
+    config_get(config_key, :max_wait_time, 10_000)
   end
 
-  def subscriber_retries(idx) do
-    config_get(idx, :subscriber_retries, 5)
+  def subscriber_retries(config_key) do
+    config_get(config_key, :subscriber_retries, 5)
   end
 
-  def subscriber_retry_delay_ms(idx) do
-    config_get(idx, :subscriber_retry_delay_ms, 5_000)
+  def subscriber_retry_delay_ms(config_key) do
+    config_get(config_key, :subscriber_retry_delay_ms, 5_000)
   end
 
-  def client_consumer_config(idx) do
-    default_client_consumer_config(idx) ++ maybe_heroku_kafka_ssl(idx) ++ sasl_options(idx) ++ ssl_options(idx)
+  def client_consumer_config(config_key) do
+    default_client_consumer_config(config_key) ++
+      maybe_heroku_kafka_ssl(config_key) ++ sasl_options(config_key) ++ ssl_options(config_key)
   end
 
-  def sasl_options(idx) do
-    idx
+  def sasl_options(config_key) do
+    config_key
     |> config_get(:sasl, %{})
     |> Kaffe.Config.sasl_config()
   end
 
-  def ssl_options(idx) do
-    idx
+  def ssl_options(config_key) do
+    config_key
     |> config_get(:ssl, false)
     |> Kaffe.Config.ssl_config()
   end
 
-  def default_client_consumer_config(idx) do
+  def default_client_consumer_config(config_key) do
     [
       auto_start_producers: false,
       allow_topic_auto_creation: false,
-      begin_offset: begin_offset(idx)
+      begin_offset: begin_offset(config_key)
     ]
   end
 
-  def begin_offset(idx) do
-    case config_get(idx, :start_with_earliest_message, false) do
+  def begin_offset(config_key) do
+    case config_get(config_key, :start_with_earliest_message, false) do
       true -> :earliest
       false -> -1
     end
   end
 
-  def offset_reset_policy(idx) do
-    config_get(idx, :offset_reset_policy, :reset_by_subscriber)
+  def offset_reset_policy(config_key) do
+    config_get(config_key, :offset_reset_policy, :reset_by_subscriber)
   end
 
-  def worker_allocation_strategy(idx) do
-    config_get(idx, :worker_allocation_strategy, :worker_per_partition)
+  def worker_allocation_strategy(config_key) do
+    config_get(config_key, :worker_allocation_strategy, :worker_per_partition)
   end
 
-  def client_down_retry_expire(idx) do
-    config_get(idx, :client_down_retry_expire, 30_000)
+  def client_down_retry_expire(config_key) do
+    config_get(config_key, :client_down_retry_expire, 30_000)
   end
 
-  def maybe_heroku_kafka_ssl(idx) do
-    case heroku_kafka?(idx) do
+  def maybe_heroku_kafka_ssl(config_key) do
+    case heroku_kafka?(config_key) do
       true -> Kaffe.Config.ssl_config()
       false -> []
     end
   end
 
-  def heroku_kafka?(idx) do
-    config_get(idx, :heroku_kafka_env, false)
+  def heroku_kafka?(config_key) do
+    config_get(config_key, :heroku_kafka_env, false)
   end
 
-  def config_get!(idx, :subscriber_name), do: idx
+  def config_get!(config_key, :subscriber_name), do: config_key
 
-  def config_get!(idx, key) do
+  def config_get!(config_key, key) do
     Application.get_env(:kaffe, :consumers)
-    |> Map.get(idx)
+    |> Map.get(config_key)
     |> Keyword.fetch!(key)
   end
 
-  def config_get(idx, :subscriber_name, _default), do: idx
+  def config_get(config_key, :subscriber_name, _default), do: config_key
 
-  def config_get(idx, key, default) do
+  def config_get(config_key, key, default) do
     Application.get_env(:kaffe, :consumers)
-    |> Map.get(idx)
+    |> Map.get(config_key)
     |> Keyword.get(key, default)
   end
 
