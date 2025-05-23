@@ -105,22 +105,35 @@ There is also legacy support for single message consumers, which process one mes
 
       ```elixir
       config :kaffe,
-        consumer: [
-          endpoints: [kafka: 9092],
-          topics: ["interesting-topic"],
-          consumer_group: "your-app-consumer-group",
-          message_handler: MessageProcessor,
-          offset_reset_policy: :reset_to_latest,
-          max_bytes: 500_000,
-          worker_allocation_strategy: :worker_per_topic_partition,
-
-          #optional
-          sasl: %{
-            mechanism: :plain,
-            login: System.get_env("KAFFE_PRODUCER_USER"),
-            password: System.get_env("KAFFE_PRODUCER_PASSWORD")
-          }
-        ],
+        consumers: %{
+          "subscriber_1" => [
+            endpoints: [kafka: 9092],
+            topics: ["interesting-topic"],
+            consumer_group: "your-app-consumer-group",
+            message_handler: MessageProcessor,
+            offset_reset_policy: :reset_to_latest,
+            max_bytes: 100_000,
+            min_bytes: 10_000,
+            max_wait_time: 1_000,
+            worker_allocation_strategy: :worker_per_topic_partition
+            
+            # optional
+            sasl: %{
+              mechanism: :plain,
+              login: System.get_env("KAFFE_PRODUCER_USER"),
+              password: System.get_env("KAFFE_PRODUCER_PASSWORD")
+            }
+          ],
+          "subscriber_2" => [
+            endpoints: [kafka: 9092],
+            topics: ["topic-2"],
+            consumer_group: "your-app-consumer-group",
+            message_handler: AnotherMessageHandler,
+            offset_reset_policy: :reset_to_latest,
+            max_bytes: 50_000,
+            worker_allocation_strategy: :worker_per_topic_partition
+          ]
+      }
       ```
 
 3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your supervision tree.
@@ -132,8 +145,13 @@ There is also legacy support for single message consumers, which process one mes
         def start(_type, _args) do
           children = [
             %{
-              id: Kaffe.GroupMemberSupervisor,
-              start: {Kaffe.GroupMemberSupervisor, :start_link, []},
+              id: Kaffe.GroupMemberSupervisor.Subscriber1,
+              start: {Kaffe.GroupMemberSupervisor, :start_link, ["subscriber_1"]},
+              type: :supervisor
+            },
+            %{
+              id: Kaffe.GroupMemberSupervisor.Subscriber2,
+              start: {Kaffe.GroupMemberSupervisor, :start_link, ["subscriber_2"]},
               type: :supervisor
             }
           ]
