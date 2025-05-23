@@ -41,6 +41,7 @@ defmodule Kaffe.GroupManager do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(config) do
     GenServer.start_link(__MODULE__, [self(), config], name: name(config))
   end
@@ -98,7 +99,8 @@ defmodule Kaffe.GroupManager do
     {:ok, worker_supervisor_pid} =
       group_member_supervisor().start_worker_supervisor(state.supervisor_pid, state.subscriber_name)
 
-    {:ok, worker_manager_pid} = worker_supervisor().start_worker_manager(worker_supervisor_pid, state.subscriber_name, state.config)
+    {:ok, worker_manager_pid} =
+      worker_supervisor().start_worker_manager(worker_supervisor_pid, state.subscriber_name, state.config)
 
     state = %State{state | worker_manager_pid: worker_manager_pid}
 
@@ -107,10 +109,8 @@ defmodule Kaffe.GroupManager do
     {:noreply, state}
   end
 
-  @doc """
-  Subscribe to a new set of topics. The new list of subscribed topics will only include
-  the requested topics and none of the currently configured topics.
-  """
+  # Subscribe to a new set of topics. The new list of subscribed topics will only include
+  # the requested topics and none of the currently configured topics.
   def handle_call({:subscribe_to_topics, requested_topics}, _from, %State{topics: topics} = state) do
     new_topics = requested_topics -- topics
     :ok = subscribe_to_topics(state, new_topics)
@@ -118,9 +118,7 @@ defmodule Kaffe.GroupManager do
     {:reply, {:ok, new_topics}, %State{state | topics: state.topics ++ new_topics}}
   end
 
-  @doc """
-  List the currently subscribed topics
-  """
+  # List the currently subscribed topics
   def handle_call({:list_subscribed_topics}, _from, %State{topics: topics} = state) do
     {:reply, topics, state}
   end
