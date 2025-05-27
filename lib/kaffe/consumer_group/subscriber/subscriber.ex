@@ -42,13 +42,14 @@ defmodule Kaffe.Subscriber do
               topic: nil,
               partition: nil,
               subscribe_ops: nil,
-              retries_remaining: nil
+              retries_remaining: nil,
+              config: nil
   end
 
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
-  def subscribe(subscriber_name, group_coordinator_pid, worker_pid, gen_id, topic, partition, ops) do
+  def subscribe(subscriber_name, group_coordinator_pid, worker_pid, gen_id, topic, partition, ops, config) do
     GenServer.start_link(
       __MODULE__,
       [
@@ -58,7 +59,8 @@ defmodule Kaffe.Subscriber do
         gen_id,
         topic,
         partition,
-        ops
+        ops,
+        config
       ],
       name: name(subscriber_name, topic, partition)
     )
@@ -80,7 +82,7 @@ defmodule Kaffe.Subscriber do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
-  def init([subscriber_name, group_coordinator_pid, worker_pid, gen_id, topic, partition, ops]) do
+  def init([subscriber_name, group_coordinator_pid, worker_pid, gen_id, topic, partition, ops, config]) do
     send(self(), {:subscribe_to_topic_partition})
 
     {:ok,
@@ -91,8 +93,9 @@ defmodule Kaffe.Subscriber do
        subscriber_name: subscriber_name,
        topic: topic,
        partition: partition,
-       subscribe_ops: ops ++ subscriber_ops(),
-       retries_remaining: max_retries()
+       subscribe_ops: ops ++ subscriber_ops(config),
+       retries_remaining: max_retries(config),
+       config: config
      }}
   end
 
@@ -191,7 +194,7 @@ defmodule Kaffe.Subscriber do
   defp handle_subscribe({:error, reason}, %{retries_remaining: retries_remaining} = state) when retries_remaining > 0 do
     Logger.debug("Failed to subscribe with reason: #{inspect(reason)}, #{retries_remaining} retries remaining")
 
-    Process.send_after(self(), {:subscribe_to_topic_partition}, retry_delay())
+    Process.send_after(self(), {:subscribe_to_topic_partition}, retry_delay(state.config))
     {:noreply, %{state | retries_remaining: retries_remaining - 1}}
   end
 
@@ -223,21 +226,21 @@ defmodule Kaffe.Subscriber do
     Application.get_env(:kaffe, :worker_mod, Kaffe.Worker)
   end
 
-  defp subscriber_ops do
+  defp subscriber_ops(config) do
     [
-      max_bytes: Kaffe.Config.Consumer.configuration().max_bytes,
-      min_bytes: Kaffe.Config.Consumer.configuration().min_bytes,
-      max_wait_time: Kaffe.Config.Consumer.configuration().max_wait_time,
-      offset_reset_policy: Kaffe.Config.Consumer.configuration().offset_reset_policy
+      max_bytes: config.max_bytes,
+      min_bytes: config.min_bytes,
+      max_wait_time: config.max_wait_time,
+      offset_reset_policy: config.offset_reset_policy
     ]
   end
 
-  defp max_retries do
-    Kaffe.Config.Consumer.configuration().subscriber_retries
+  defp max_retries(config) do
+    config.subscriber_retries
   end
 
-  defp retry_delay do
-    Kaffe.Config.Consumer.configuration().subscriber_retry_delay_ms
+  defp retry_delay(config) do
+    config.subscriber_retry_delay_ms
   end
 
   defp name(subscriber_name, topic, partition) do

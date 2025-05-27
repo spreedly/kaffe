@@ -23,6 +23,7 @@ defmodule Kaffe.GroupManager do
     """
     defstruct supervisor_pid: nil,
               subscriber_name: nil,
+              config: nil,
               consumer_group: nil,
               topics: nil,
               offset: nil,
@@ -40,32 +41,30 @@ defmodule Kaffe.GroupManager do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
-  def start_link() do
-    GenServer.start_link(__MODULE__, [self()], name: name())
+  def start_link(config) do
+    GenServer.start_link(__MODULE__, [self(), config], name: name(config))
   end
 
   @doc """
   Dynamically subscribe to topics in addition to the configured topics.
   Returns the newly subscribed topics. This may not include all values if any are already subscribed to.
   """
-  def subscribe_to_topics(topics) do
-    GenServer.call(name(), {:subscribe_to_topics, topics})
+  def subscribe_to_topics({config, topics}) do
+    GenServer.call(name(config), {:subscribe_to_topics, topics})
   end
 
   @doc """
   List of currently subscribed topics.
   """
-  def list_subscribed_topics do
-    GenServer.call(name(), {:list_subscribed_topics})
+  def list_subscribed_topics(config) do
+    GenServer.call(name(config), {:list_subscribed_topics})
   end
 
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
-  def init([supervisor_pid]) do
-    Logger.info("event#startup=#{__MODULE__} name=#{name()}")
-
-    config = Kaffe.Config.Consumer.configuration()
+  def init([supervisor_pid, config]) do
+    Logger.info("event#startup=#{__MODULE__} name=#{name(config)}")
 
     case kafka().start_client(config.endpoints, config.subscriber_name, config.consumer_config) do
       :ok ->
@@ -82,7 +81,8 @@ defmodule Kaffe.GroupManager do
        supervisor_pid: supervisor_pid,
        subscriber_name: config.subscriber_name,
        consumer_group: config.consumer_group,
-       topics: config.topics
+       topics: config.topics,
+       config: config
      }}
   end
 
@@ -98,7 +98,7 @@ defmodule Kaffe.GroupManager do
     {:ok, worker_supervisor_pid} =
       group_member_supervisor().start_worker_supervisor(state.supervisor_pid, state.subscriber_name)
 
-    {:ok, worker_manager_pid} = worker_supervisor().start_worker_manager(worker_supervisor_pid, state.subscriber_name)
+    {:ok, worker_manager_pid} = worker_supervisor().start_worker_manager(worker_supervisor_pid, state.subscriber_name, state.config)
 
     state = %State{state | worker_manager_pid: worker_manager_pid}
 
@@ -132,7 +132,7 @@ defmodule Kaffe.GroupManager do
   defp subscribe_to_topics(state, topics) do
     Logger.debug("Starting group members for the following topics: #{inspect(topics)}")
 
-    retry with: exponential_backoff() |> expiry(client_down_retry_expire()),
+    retry with: exponential_backoff() |> expiry(state.config.client_down_retry_expire),
           rescue_only: [Kaffe.GroupManager.ClientDownException] do
       Enum.each(topics, fn topic ->
         case subscribe_to_topic(state, topic) do
@@ -170,7 +170,8 @@ defmodule Kaffe.GroupManager do
       state.subscriber_name,
       state.consumer_group,
       state.worker_manager_pid,
-      topic
+      topic,
+      state.config
     )
   end
 
@@ -178,12 +179,8 @@ defmodule Kaffe.GroupManager do
     Application.get_env(:kaffe, :kafka_mod, :brod)
   end
 
-  defp name do
-    :"#{__MODULE__}.#{subscriber_name()}"
-  end
-
-  defp subscriber_name do
-    Kaffe.Config.Consumer.configuration().subscriber_name
+  defp name(config) do
+    :"#{__MODULE__}.#{config.subscriber_name}"
   end
 
   defp group_member_supervisor do
@@ -192,10 +189,6 @@ defmodule Kaffe.GroupManager do
 
   defp worker_supervisor do
     Application.get_env(:kaffe, :worker_supervisor_mod, Kaffe.WorkerSupervisor)
-  end
-
-  defp client_down_retry_expire() do
-    Kaffe.Config.Consumer.configuration().client_down_retry_expire
   end
 
   # Brod client errors are erlang exceptions and are hard to pattern match correctly.

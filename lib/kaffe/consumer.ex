@@ -15,8 +15,8 @@ defmodule Kaffe.Consumer do
 
   @behaviour :brod_group_subscriber
 
-  @kafka Application.get_env(:kaffe, :kafka_mod, :brod)
-  @group_subscriber Application.get_env(:kaffe, :group_subscriber_mod, :brod_group_subscriber)
+  @kafka Application.compile_env(:kaffe, :kafka_mod, :brod)
+  @group_subscriber Application.compile_env(:kaffe, :group_subscriber_mod, :brod_group_subscriber)
 
   require Record
   import Record, only: [defrecord: 2, extract: 2]
@@ -61,8 +61,8 @@ defmodule Kaffe.Consumer do
   acknowledgement you will be able to process messages faster but will need to
   take on the burden of ensuring no messages are lost.
   """
-  def start_link do
-    config = Kaffe.Config.Consumer.configuration()
+  def start_link(config_key) do
+    config = Kaffe.Config.Consumer.configuration(config_key)
 
     @kafka.start_link_group_subscriber(
       config.subscriber_name,

@@ -32,6 +32,7 @@ defmodule Kaffe.GroupMember do
     defstruct subscribers: [],
               subscriber_name: nil,
               group_coordinator_pid: nil,
+              config: nil,
               consumer_group: nil,
               worker_manager_pid: nil,
               topic: nil,
@@ -42,14 +43,15 @@ defmodule Kaffe.GroupMember do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
-  def start_link(subscriber_name, consumer_group, worker_manager_pid, topic) do
+  def start_link(subscriber_name, consumer_group, worker_manager_pid, topic, config) do
     GenServer.start_link(
       __MODULE__,
       [
         subscriber_name,
         consumer_group,
         worker_manager_pid,
-        topic
+        topic,
+        config
       ],
       name: name(subscriber_name, topic)
     )
@@ -76,7 +78,7 @@ defmodule Kaffe.GroupMember do
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
-  def init([subscriber_name, consumer_group, worker_manager_pid, topic]) do
+  def init([subscriber_name, consumer_group, worker_manager_pid, topic, config]) do
     :ok = kafka().start_consumer(subscriber_name, topic, [])
 
     {:ok, pid} =
@@ -84,7 +86,7 @@ defmodule Kaffe.GroupMember do
         subscriber_name,
         consumer_group,
         [topic],
-        group_config(),
+        config.group_config,
         __MODULE__,
         self()
       )
@@ -102,7 +104,8 @@ defmodule Kaffe.GroupMember do
        group_coordinator_pid: pid,
        consumer_group: consumer_group,
        worker_manager_pid: worker_manager_pid,
-       topic: topic
+       topic: topic,
+       config: config
      }}
   end
 
@@ -112,7 +115,7 @@ defmodule Kaffe.GroupMember do
   def handle_cast({:assignments_received, gen_id, assignments}, state) do
     Logger.info("event#assignments_received=#{name(state.subscriber_name, state.topic)} generation_id=#{gen_id}")
 
-    Process.send_after(self(), {:allocate_subscribers, gen_id, assignments}, rebalance_delay())
+    Process.send_after(self(), {:allocate_subscribers, gen_id, assignments}, state.config.rebalance_delay_ms)
     {:noreply, %{state | current_gen_id: gen_id}}
   end
 
@@ -154,7 +157,8 @@ defmodule Kaffe.GroupMember do
             gen_id,
             topic,
             partition,
-            compute_offset(offset, configured_offset())
+            compute_offset(offset, state.config.consumer_config[:begin_offset]),
+            state.config
           )
 
         pid
@@ -177,18 +181,6 @@ defmodule Kaffe.GroupMember do
   end
   defp compute_offset(offset, _configured_offset) do
     [begin_offset: offset]
-  end
-
-  defp configured_offset do
-    Kaffe.Config.Consumer.begin_offset()
-  end
-
-  defp rebalance_delay do
-    Kaffe.Config.Consumer.configuration().rebalance_delay_ms
-  end
-
-  defp group_config do
-    Kaffe.Config.Consumer.configuration().group_config
   end
 
   defp kafka do
