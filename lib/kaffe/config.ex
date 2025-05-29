@@ -6,7 +6,7 @@ defmodule Kaffe.Config do
   end
 
   @doc """
-  Transform the list of endpoints into a list of `{charlist, port}` tuples.
+  Transform a list of endpoints or an encoded string into a list of `{charlist, port}` tuples.
   """
   def parse_endpoints(endpoints) when is_list(endpoints) do
     endpoints
@@ -15,9 +15,6 @@ defmodule Kaffe.Config do
     end)
   end
 
-  @doc """
-  Transform the encoded string into a list of `{charlist, port}` tuples.
-  """
   def parse_endpoints(url) when is_binary(url) do
     url
     |> String.replace("kafka+ssl://", "")
@@ -53,6 +50,7 @@ defmodule Kaffe.Config do
   def ssl_config(_), do: []
 
   def ssl_config(_client_cert = nil, _client_cert_key = nil), do: []
+
   def ssl_config(client_cert, client_cert_key) do
     [
       ssl: [

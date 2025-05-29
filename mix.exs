@@ -44,7 +44,15 @@ defmodule Kaffe.Mixfile do
         "An opinionated Elixir wrapper around brod, the Erlang Kafka client, " <>
           "that supports encrypted connections to Heroku Kafka out of the box.",
       licenses: ["MIT"],
-      maintainers: ["Kevin Lewis", "David Santoso", "Ryan Daigle", "Spreedly", "Joe Peck", "Brittany Hayes", "Anthony Walker"],
+      maintainers: [
+        "Kevin Lewis",
+        "David Santoso",
+        "Ryan Daigle",
+        "Spreedly",
+        "Joe Peck",
+        "Brittany Hayes",
+        "Anthony Walker"
+      ],
       links: %{
         "GitHub" => @source_url
       }
