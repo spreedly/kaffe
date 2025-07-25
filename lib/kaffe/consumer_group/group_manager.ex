@@ -41,7 +41,6 @@ defmodule Kaffe.GroupManager do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
-  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(config) do
     GenServer.start_link(__MODULE__, [self(), config], name: name(config))
   end
