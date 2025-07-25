@@ -57,7 +57,7 @@ defmodule Kaffe.Consumer do
 
   Only use async processing if absolutely needed by your application's
   processing flow. With automatic (sync) acknowledgement then the message flow
-  from Kaffe.Consumer has backpressure from your system. With manual (async)
+  from `Kaffe.Consumer` has backpressure from your system. With manual (async)
   acknowledgement you will be able to process messages faster but will need to
   take on the burden of ensuring no messages are lost.
   """
@@ -97,6 +97,7 @@ defmodule Kaffe.Consumer do
   @doc """
   Initialize the consumer loop.
   """
+  @impl :brod_group_subscriber
   def init(_consumer_group, [config]) do
     start_consumer_client(config)
     {:ok, %Kaffe.Consumer.State{message_handler: config.message_handler, async: config.async_message_ack}}
@@ -129,6 +130,7 @@ defmodule Kaffe.Consumer do
   - Once you've processed the message you will need to call
     `Kaffe.Consumer.ack/2` with the pid and message.
   """
+  @impl :brod_group_subscriber
   def handle_message(topic, partition, msg, %{async: false, message_handler: handler} = state) do
     :ok = apply(handler, :handle_message, [compile_message(msg, topic, partition)])
     {:ok, :ack, state}

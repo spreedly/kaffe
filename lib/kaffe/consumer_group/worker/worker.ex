@@ -11,14 +11,20 @@ defmodule Kaffe.Worker do
   processing the message set.
   """
 
+  use GenServer
+
   require Logger
 
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
+  @doc false
   def start_link(message_handler, subscriber_name, worker_name) do
     GenServer.start_link(__MODULE__, [message_handler, worker_name], name: name(subscriber_name, worker_name))
   end
+
+  @doc false
+  def child_spec(opts), do: super(opts)
 
   def process_messages(pid, subscriber_pid, topic, partition, generation_id, messages) do
     GenServer.cast(pid, {:process_messages, subscriber_pid, topic, partition, generation_id, messages})
@@ -27,6 +33,7 @@ defmodule Kaffe.Worker do
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
+  @impl GenServer
   def init([message_handler, worker_name]) do
     Logger.info("event#starting=#{__MODULE__} name=#{worker_name}")
     {:ok, %{message_handler: message_handler, worker_name: worker_name}}
@@ -39,6 +46,7 @@ defmodule Kaffe.Worker do
   subscriber should deal with the message offset. Depending on the situation,
   a message processor may not want to have it's most recent offsets committed.
   """
+  @impl GenServer
   def handle_cast(
         {:process_messages, subscriber_pid, topic, partition, generation_id, messages},
         %{message_handler: message_handler} = state
@@ -61,12 +69,14 @@ defmodule Kaffe.Worker do
     {:noreply, state}
   end
 
-  ## ==========================================================================
-  ## Helpers
-  ## ==========================================================================
+  @impl GenServer
   def terminate(reason, _state) do
     Logger.info("event#terminate=#{inspect(self())} reason=#{inspect(reason)}")
   end
+
+  ## ==========================================================================
+  ## Helpers
+  ## ==========================================================================
 
   defp name(subscriber_name, worker_name) do
     :"#{__MODULE__}.#{subscriber_name}.#{worker_name}"

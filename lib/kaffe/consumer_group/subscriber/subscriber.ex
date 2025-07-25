@@ -34,6 +34,7 @@ defmodule Kaffe.Subscriber do
   defrecord :kafka_message, extract(:kafka_message, from_lib: "brod/include/brod.hrl")
 
   defmodule State do
+    @moduledoc false
     defstruct subscriber_pid: nil,
               group_coordinator_pid: nil,
               gen_id: nil,
@@ -82,6 +83,10 @@ defmodule Kaffe.Subscriber do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
+  @doc false
+  def child_spec(opts), do: super(opts)
+
+  @impl GenServer
   def init([subscriber_name, group_coordinator_pid, worker_pid, gen_id, topic, partition, ops, config]) do
     send(self(), {:subscribe_to_topic_partition})
 
@@ -99,6 +104,7 @@ defmodule Kaffe.Subscriber do
      }}
   end
 
+  @impl GenServer
   def handle_info(
         {_pid, {:kafka_message_set, topic, partition, _high_wm_offset, _messages} = message_set},
         state
@@ -154,6 +160,7 @@ defmodule Kaffe.Subscriber do
     {:noreply, state}
   end
 
+  @impl GenServer
   def handle_cast({:commit_offsets, topic, partition, generation_id, offset}, state) do
     Logger.debug(
       "event#commit_offsets topic=#{state.topic} partition=#{state.partition} offset=#{offset} generation=#{generation_id}"

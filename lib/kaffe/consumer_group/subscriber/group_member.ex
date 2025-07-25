@@ -29,6 +29,8 @@ defmodule Kaffe.GroupMember do
   @behaviour :brod_group_member
 
   defmodule State do
+    @moduledoc false
+
     defstruct subscribers: [],
               subscriber_name: nil,
               group_coordinator_pid: nil,
@@ -43,6 +45,8 @@ defmodule Kaffe.GroupMember do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
+
+  @doc false
   def start_link(subscriber_name, consumer_group, worker_manager_pid, topic, config) do
     GenServer.start_link(
       __MODULE__,
@@ -57,20 +61,27 @@ defmodule Kaffe.GroupMember do
     )
   end
 
+  @doc false
+  def child_spec(opts), do: super(opts)
+
   # Should not receive this
+  @impl :brod_group_member
   def get_committed_offsets(_group_member_pid, _topic_partitions) do
     Logger.warning("event#get_committed_offsets")
   end
 
   # Should not receive this
+  @impl :brod_group_member
   def assign_partitions(_pid, _members, _topic_partitions) do
     Logger.warning("event#assign_partitions")
   end
 
+  @impl :brod_group_member
   def assignments_received(pid, _member_id, generation_id, assignments) do
     GenServer.cast(pid, {:assignments_received, generation_id, assignments})
   end
 
+  @impl :brod_group_member
   def assignments_revoked(pid) do
     GenServer.cast(pid, {:assignments_revoked})
   end
@@ -78,6 +89,8 @@ defmodule Kaffe.GroupMember do
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
+
+  @impl GenServer
   def init([subscriber_name, consumer_group, worker_manager_pid, topic, config]) do
     :ok = kafka().start_consumer(subscriber_name, topic, [])
 
@@ -110,6 +123,7 @@ defmodule Kaffe.GroupMember do
   # Handle the partition assignments. Wait the configured duration before allocating the
   # subscribers to give each consumer a chance to handle the latest generation of the
   # configuration.
+  @impl GenServer
   def handle_cast({:assignments_received, gen_id, assignments}, state) do
     Logger.info("event#assignments_received=#{name(state.subscriber_name, state.topic)} generation_id=#{gen_id}")
 
@@ -124,6 +138,7 @@ defmodule Kaffe.GroupMember do
     {:noreply, %{state | :subscribers => []}}
   end
 
+  @impl GenServer
   # If we're not at the latest generation, discard the assignment for whatever is next.
   def handle_info({:allocate_subscribers, gen_id, _assignments}, %{current_gen_id: current_gen_id} = state)
       when gen_id < current_gen_id do
