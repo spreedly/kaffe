@@ -4,6 +4,23 @@
 
 * Allow keyword configuration for subscribers. Note, keywords require atom keys, so if your current version of `kaffe` is 1.27.0 or higher, adopting to the keyword subscribers is a breaking (and highly encouraged) change.
 
+* Compression support by default was removed from Brod. While this allows less dependencies out of the box, it also means that topics with compression now need additional config for `snappy` or `lz4` compression.
+
+    To support compression as `brod` did by default before this change, add `snappyer` and `lz4b` to your `deps`, add the following to `config`
+
+    ```elixir
+    config :kafka_protocol, provide_compression: [
+    snappy: :snappyer,
+    lz4: :lz4b
+    ]
+    ```
+
+    For more information and to see other supported compression types, see [kafka_protocol's README](https://github.com/kafka4beam/kafka_protocol/blob/master/README.md#compression-support).
+
+### Enhancements
+
+* Bumps `:brod` to v4, which drops `snappyer` dependency requirement
+
 # 1.28.0
 
 ### Enhancements
