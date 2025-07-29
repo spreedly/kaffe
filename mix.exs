@@ -21,7 +21,7 @@ defmodule Kaffe.Mixfile do
 
   def application do
     [
-      applications: [:logger, :brod, :retry],
+      extra_applications: [:logger],
       mod: {Kaffe, []}
     ]
   end

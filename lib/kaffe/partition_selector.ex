@@ -4,17 +4,18 @@ defmodule Kaffe.PartitionSelector do
 
   ## Examples
 
-  iex> Kaffe.PartitionSelector.round_robin(nil, 3)
-  0
+      iex> Kaffe.PartitionSelector.round_robin(nil, 3)
+      0
 
-  iex> Kaffe.PartitionSelector.round_robin(0, 3)
-  1
+      iex> Kaffe.PartitionSelector.round_robin(0, 3)
+      1
 
-  iex> Kaffe.PartitionSelector.round_robin(1, 3)
-  2
+      iex> Kaffe.PartitionSelector.round_robin(1, 3)
+      2
 
-  iex> Kaffe.PartitionSelector.round_robin(2, 3)
-  0
+      iex> Kaffe.PartitionSelector.round_robin(2, 3)
+      0
+
   """
   def round_robin(current, total) do
     if current < total - 1 do

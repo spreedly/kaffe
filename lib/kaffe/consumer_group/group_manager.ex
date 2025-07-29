@@ -4,7 +4,7 @@ defmodule Kaffe.GroupManager do
   consume a Kafka topic via a subscriber/worker combo per topic per partition
   as part of a consumer group.
 
-  See Kaffe.GroupMemberSupervisor for distinct components.
+  See `Kaffe.GroupMemberSupervisor` for distinct components.
 
   The process begins by starting the client connection to Kafka. Then group
   members are created for each of the configured topics.
@@ -18,9 +18,8 @@ defmodule Kaffe.GroupManager do
   require Logger
 
   defmodule State do
-    @moduledoc """
-    The running state of the consumer group manager.
-    """
+    @moduledoc false
+
     defstruct supervisor_pid: nil,
               subscriber_name: nil,
               config: nil,
@@ -41,9 +40,14 @@ defmodule Kaffe.GroupManager do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
+
+  @doc false
   def start_link(config) do
     GenServer.start_link(__MODULE__, [self(), config], name: name(config))
   end
+
+  @doc false
+  def child_spec(opts), do: super(opts)
 
   @doc """
   Dynamically subscribe to topics in addition to the configured topics.
@@ -63,6 +67,8 @@ defmodule Kaffe.GroupManager do
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
+
+  @impl GenServer
   def init([supervisor_pid, config]) do
     Logger.info("event#startup=#{__MODULE__} name=#{name(config)}")
 
@@ -86,12 +92,11 @@ defmodule Kaffe.GroupManager do
      }}
   end
 
-  @doc """
-  Start the subscribers and workers to process message sets
-
-  Worker are booted before the subscribers so when the subscribers receive the
-  first messages, we know there will be a worker to do the actual processing work
-  """
+  # Start the subscribers and workers to process message sets
+  #
+  # Worker are booted before the subscribers so when the subscribers receive the
+  # first messages, we know there will be a worker to do the actual processing work
+  @impl GenServer
   def handle_cast({:start_group_members}, state) do
     Logger.debug("Starting worker supervisors for group manager: #{inspect(self())}")
 
@@ -110,6 +115,7 @@ defmodule Kaffe.GroupManager do
 
   # Subscribe to a new set of topics. The new list of subscribed topics will only include
   # the requested topics and none of the currently configured topics.
+  @impl GenServer
   def handle_call({:subscribe_to_topics, requested_topics}, _from, %State{topics: topics} = state) do
     new_topics = requested_topics -- topics
     :ok = subscribe_to_topics(state, new_topics)

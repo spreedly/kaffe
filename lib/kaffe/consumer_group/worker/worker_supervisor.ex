@@ -33,6 +33,7 @@ defmodule Kaffe.WorkerSupervisor do
     )
   end
 
+  @impl Supervisor
   def init(subscriber_name) do
     Logger.info("event#startup=#{__MODULE__} subscriber_name=#{subscriber_name}")
 

@@ -33,6 +33,10 @@ defmodule Kaffe.GroupMemberSupervisor do
     Supervisor.start_link(__MODULE__, config, name: name(config))
   end
 
+  @doc false
+  def child_spec(opts), do: super(opts)
+
+  @doc false
   def start_worker_supervisor(supervisor_pid, subscriber_name) do
     Supervisor.start_child(
       supervisor_pid,
@@ -44,6 +48,7 @@ defmodule Kaffe.GroupMemberSupervisor do
     )
   end
 
+  @doc false
   def start_group_member(
         supervisor_pid,
         subscriber_name,
@@ -65,6 +70,7 @@ defmodule Kaffe.GroupMemberSupervisor do
     )
   end
 
+  @impl Supervisor
   def init(config) do
     Logger.info("event#starting=#{__MODULE__}")
 

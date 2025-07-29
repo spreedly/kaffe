@@ -26,6 +26,11 @@ defmodule Kaffe.WorkerManager do
   ## ==========================================================================
   ## Public API
   ## ==========================================================================
+
+  @doc false
+  def child_spec(opts), do: super(opts)
+
+  @doc false
   def start_link([subscriber_name, config]) do
     GenServer.start_link(__MODULE__, [self(), subscriber_name, config], name: name(subscriber_name))
   end
@@ -37,6 +42,7 @@ defmodule Kaffe.WorkerManager do
   ## ==========================================================================
   ## Callbacks
   ## ==========================================================================
+  @impl GenServer
   def init([supervisor_pid, subscriber_name, config]) do
     Logger.info("event#starting=#{__MODULE__} subscriber_name=#{subscriber_name} supervisor=#{inspect(supervisor_pid)}")
 
@@ -51,6 +57,7 @@ defmodule Kaffe.WorkerManager do
      }}
   end
 
+  @impl GenServer
   def handle_call({:worker_for, topic, partition}, _from, state) do
     Logger.debug("Allocating worker: #{topic} / #{partition}")
     worker_pid = allocate_worker(topic, partition, state)
@@ -87,6 +94,8 @@ defmodule Kaffe.WorkerManager do
     pid
   end
 
+  # This should probably be defp, but would technically be a breaking change.
+  @doc false
   def worker_name(topic, partition, worker_allocation_strategy) do
     case worker_allocation_strategy do
       :worker_per_partition -> :"worker_#{partition}"
