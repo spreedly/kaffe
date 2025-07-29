@@ -23,6 +23,7 @@ An opinionated, highly specific, Elixir wrapper around [Brod](https://github.com
 - [Kaffe Producer Usage](#kaffe-producer-usage)
 - [Heroku Configuration](#heroku-configuration)
 - [Producing to Kafka](#producing-to-kafka)
+- [Compression Config](#compression-config)
 - [Testing](#testing)
   - [Setup](#setup)
   - [Running](#running)
@@ -400,6 +401,21 @@ There are several ways to produce:
     ```
 
     **NOTE**: With this approach Kaffe will not calculate the next partition since it assumes you're taking over that job by giving it a specific partition.
+
+## Compression Config
+
+Compression support by default was removed from Brod. While this allows less dependencies out of the box, it also means that topics with compression now need additional config for `snappy` or `lz4` compression.
+
+To support compression as `brod` did by default before this change, add `snappyer` and `lz4b` to your `deps`, add the following to `config`
+
+```elixir
+config :kafka_protocol, provide_compression: [
+    snappy: :snappyer,
+    lz4: :lz4b
+]
+```
+
+For more information and to see other supported compression types, see [kafka_protocol's README](https://github.com/kafka4beam/kafka_protocol/blob/master/README.md#compression-support).
 
 ## Testing
 
