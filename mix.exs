@@ -2,7 +2,7 @@ defmodule Kaffe.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/spreedly/kaffe"
-  @version "1.27.1"
+  @version "1.27.2"
 
   def project do
     [
@@ -33,7 +33,7 @@ defmodule Kaffe.Mixfile do
     [
       {:brod, "~> 3.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:retry, "~> 0.15.0"}
+      {:retry, ">= 0.15.0 and < 0.19.0"}
     ]
   end
 

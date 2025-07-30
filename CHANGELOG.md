@@ -1,3 +1,7 @@
+# 1.27.2
+
+* Relax `:retry` requirement
+
 # 1.27.1
 
 ### Enhancements
