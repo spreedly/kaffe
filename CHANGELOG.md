@@ -1,7 +1,7 @@
 # 1.28.0
 
-* Add `Kaffe.MessageHander` behaviour. To utilize it, add the behaviour to your configured
-  `message_hander` and `@impl Kaffe.MessageHander` on `handle_messages/1`.
+* Add `Kaffe.MessageHandler` behaviour. To utilize it, add the behaviour to your configured
+  `message_handler` and `@impl Kaffe.MessageHandler` on `handle_messages/1`.
 
 # 1.27.2
 
