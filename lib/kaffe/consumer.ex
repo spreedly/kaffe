@@ -18,6 +18,18 @@ defmodule Kaffe.Consumer do
   @kafka Application.compile_env(:kaffe, :kafka_mod, :brod)
   @group_subscriber Application.compile_env(:kaffe, :group_subscriber_mod, :brod_group_subscriber)
 
+  # See kafka_message in "brod/include/brod.hrl"
+  @type message() :: %{
+          key: binary(),
+          value: binary(),
+          topic: binary(),
+          offset: non_neg_integer(),
+          partition: non_neg_integer(),
+          ts: non_neg_integer(),
+          ts_type: :undefined | :create | :append,
+          headers: list()
+        }
+
   require Record
   import Record, only: [defrecord: 2, extract: 2]
   defrecord :kafka_message, extract(:kafka_message, from_lib: "brod/include/brod.hrl")
