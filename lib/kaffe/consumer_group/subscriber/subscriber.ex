@@ -12,12 +12,12 @@ defmodule Kaffe.Subscriber do
 
   The subscriber reads the following options out of the configuration:
 
-      - `max_bytes` - The maximum number of message bytes to receive in a batch
-      - `min_bytes` - The minimum number of message bytes to receive in a batch
-      - `max_wait_time` - Maximum number of milliseconds broker will wait for `:min_bytes` of messages
-          to be collected
-      - `offset_reset_policy` - The native `auto.offset.reset` option,
-          either `:reset_to_earliest` or `:reset_to_latest`.
+    - `max_bytes` - The maximum number of message bytes to receive in a batch
+    - `min_bytes` - The minimum number of message bytes to receive in a batch
+    - `max_wait_time` - Maximum number of milliseconds broker will wait for `:min_bytes` of messages
+        to be collected
+    - `offset_reset_policy` - The native `auto.offset.reset` option,
+        either `:reset_to_earliest` or `:reset_to_latest`.
 
   See: https://github.com/klarna/brucke/blob/master/src/brucke_member.erl
   Also: https://github.com/klarna/brod/blob/master/src/brod_consumer.erl
