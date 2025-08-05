@@ -39,15 +39,7 @@ An opinionated, highly specific, Elixir wrapper around [Brod](https://github.com
       end
       ```
 
-  2. Ensure `kaffe` is started with your application:
-
-      ```elixir
-      def application do
-        [applications: [:logger, :kaffe]]
-      end
-      ```
-
-  3. Configure a Kaffe Consumer and/or Producer
+  2. Configure a Kaffe Consumer and/or Producer
 
 ## Kaffe Consumer Usage
 
