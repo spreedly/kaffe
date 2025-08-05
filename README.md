@@ -39,15 +39,7 @@ An opinionated, highly specific, Elixir wrapper around [Brod](https://github.com
       end
       ```
 
-  2. Ensure `kaffe` is started with your application:
-
-      ```elixir
-      def application do
-        [applications: [:logger, :kaffe]]
-      end
-      ```
-
-  3. Configure a Kaffe Consumer and/or Producer
+  2. Configure a Kaffe Consumer and/or Producer
 
 ## Kaffe Consumer Usage
 
@@ -61,14 +53,15 @@ There is also legacy support for single message consumers, which process one mes
 
 ### Kaffe GroupMember - Batch Message Consumer
 
-1. Define a `handle_messages/1` function in the provided module.
+1. Define a `handle_messages/1` function in the provided module implementing the `Kaffe.MessageHandler` behaviour.
 
-    `handle_messages/1` This function (note the pluralization) will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
-
-    The module's `handle_messages/1` function _must_ return `:ok` or Kaffe will throw an error. The Kaffe consumer will block until your `handle_messages/1` function returns `:ok`.
+    `handle_messages/1` will be called with a *list of messages*, with each message as a map. Each message map will include the topic and partition in addition to the normal Kafka message metadata.
 
     ```elixir
     defmodule MessageProcessor do
+      @behaviour Kaffe.MessageHandler
+
+      @impl Kaffe.MessageHandler
       def handle_messages(messages) do
         for %{key: key, value: value} = message <- messages do
           IO.inspect message
@@ -176,6 +169,9 @@ Example:
 
 ```elixir
 defmodule MessageProcessor do
+  @behaviour Kaffe.MessageHandler
+
+  @impl Kaffe.MessageHandler
   def handle_messages(messages) do
     for %{key: key, value: value} = message <- messages do
       IO.inspect message

@@ -2,7 +2,7 @@ defmodule Kaffe.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/spreedly/kaffe"
-  @version "1.27.2"
+  @version "1.28.0"
 
   def project do
     [
@@ -63,7 +63,8 @@ defmodule Kaffe.Mixfile do
     [
       extras: [
         "README.md": [title: "Overview"],
-        "LICENSE.md": [title: "License"]
+        "LICENSE.md": [title: "License"],
+        "CHANGELOG.md": [title: "Changelog"]
       ],
       main: "readme",
       source_url: @source_url,

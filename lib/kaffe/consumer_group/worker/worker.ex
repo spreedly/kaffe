@@ -2,13 +2,11 @@ defmodule Kaffe.Worker do
   @moduledoc """
   A worker receives messages for a single topic for a single partition.
 
-  Processing the message set is delegated to the configured message handler. It's
-  responsible for any error handling as well. The message handler must define a
-  `handle_messages` function (*note* the pluralization!) to accept a list of messages.
-
-  The result of `handle_messages` is sent back to the subscriber. Additionally, the
-  message handler should inform the subscriber on what to do with the offsets after
-  processing the message set.
+  Processing the message set is delegated to the configured message
+  handler (See `Kaffe.MessageHandler`). The result of `handle_messages`
+  is sent back to the subscriber. Additionally, the message handler should
+  inform the subscriber on what to do with the offsets after processing the
+  message set.
   """
 
   use GenServer
@@ -39,13 +37,11 @@ defmodule Kaffe.Worker do
     {:ok, %{message_handler: message_handler, worker_name: worker_name}}
   end
 
-  @doc """
-  Entry point for processing a message set received by a subscriber.
-
-  Note that the response from the message handler is what dictates how a
-  subscriber should deal with the message offset. Depending on the situation,
-  a message processor may not want to have it's most recent offsets committed.
-  """
+  # Entry point for processing a message set received by a subscriber.
+  #
+  # Note that the response from the message handler is what dictates how a
+  # subscriber should deal with the message offset. Depending on the situation,
+  # a message processor may not want to have it's most recent offsets committed.
   @impl GenServer
   def handle_cast(
         {:process_messages, subscriber_pid, topic, partition, generation_id, messages},
