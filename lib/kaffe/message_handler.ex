@@ -10,7 +10,7 @@ defmodule Kaffe.MessageHandler do
         consumers: %{
           "subscriber_1" => [
             ...
-            message_hander: MyApp.MessageHandler
+            message_handler: MyApp.MessageHandler
           ]
         }
   ```
