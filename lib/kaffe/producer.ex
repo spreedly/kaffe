@@ -1,18 +1,8 @@
 defmodule Kaffe.Producer do
   @moduledoc """
 
-  The producer pulls in values from the Kaffe producer configuration:
-
-    - `heroku_kafka_env` - endpoints and SSL configuration will be pulled from ENV
-    - `endpoints` - plaintext Kafka endpoints
-    - `topics` - a list of Kafka topics to prep for producing
-    - `partition_strategy` - the strategy to use when selecting the next partition.
-      Default `:md5`.
-      - `:md5`: provides even and deterministic distrbution of the messages over the available partitions based on an MD5 hash of the key
-      - `:random` - Select a random partition
-      - function - Pass a function as an argument that accepts five arguments and
-        returns the partition number to use for the message
-          - `topic, current_partition, partitions_count, key, value`
+  The producer pulls in values from the Kaffe producer configuration. See `Kaffe.Config.Producer` for a list
+  of options.
 
   Clients can also specify a partition directly when producing.
 

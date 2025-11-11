@@ -39,27 +39,8 @@ defmodule Kaffe.Consumer do
   @doc """
   Start a Kafka consumer
 
-  The consumer pulls in values from the Kaffe consumer configuration:
-
-    - `heroku_kafka_env` - endpoints and SSL configuration will be pulled from ENV
-    - `endpoints` - plaintext Kafka endpoints
-    - `consumer_group` - the consumer group id (should be unique to your app)
-    - `topics` - a list of Kafka topics to consume
-    - `message_handler` - the module that will be called for each Kafka message
-    - `async_message_ack` - if false Kafka offset will automatically acknowledge
-      after successful message parsing
-    - `start_with_earliest_message` - If true the worker will consume from the
-      beginning of the topic when it first starts. This only affects consumer
-      behavior before the consumer group starts recording its offsets in Kafka.
-
-  Note: If `async_message_ack` is true then you'll need to call `ack/2` to
-  acknowledge Kafka messages as processed.
-
-  Only use async processing if absolutely needed by your application's
-  processing flow. With automatic (sync) acknowledgement then the message flow
-  from `Kaffe.Consumer` has backpressure from your system. With manual (async)
-  acknowledgement you will be able to process messages faster but will need to
-  take on the burden of ensuring no messages are lost.
+  The consumer pulls in values from the Kaffe consumer configuration. See more
+  details at `Kaffe.Config.Consumer`.
   """
   def start_link(config_key) do
     config = Kaffe.Config.Consumer.configuration(config_key)

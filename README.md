@@ -79,29 +79,7 @@ There is also legacy support for single message consumers, which process one mes
     end
     ```
 
-2. The configuration options for the `GroupMember` consumer are a superset of those for `Kaffe.Consumer`, except for `:async_message_ack`, which is not supported. The additional options are:
-
-	* `:rebalance_delay_ms` The time to allow for rebalancing among workers. The default is 10,000, which should give the consumers time to rebalance when scaling.
-
-	* `:max_bytes` Limits the number of message bytes received from Kafka for a particular topic subscriber. The default is 1MB. This parameter might need tuning depending on the number of partitions in the topics being read (there is one subscriber per topic per partition). For example, if you are reading from two topics, each with 32 partitions, there is the potential of 64MB in buffered messages at any one time.
-
-	* `:min_bytes` Sets a minimum threshold for the number of bytes to fetch for a batch of messages. The default is 0MB.
-
-	* `:max_wait_time` Sets the maximum number of milliseconds that the broker is allowed to collect min_bytes of messages in a batch of messages.
-
-	* `:offset_reset_policy` Controls how the subscriber handles an expired offset. See the Kafka consumer option, [`auto.offset.reset`](https://kafka.apache.org/documentation/#newconsumerconfigs). Valid values for this option are:
-
-		* `:reset_to_earliest` Reset to the earliest available offset.
-		* `:reset_to_latest` Reset to the latest offset.
-		* `:reset_by_subscriber` The subscriber receives the `OffsetOutOfRange` error.
-
-	More information in the [Brod consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
-
-	* `:worker_allocation_strategy` Controls how workers are allocated with respect to consumed topics and partitions.
-
-		* `:worker_per_partition` The default (for backward compatibilty) and allocates a single worker per partition across topics. This is useful for managing concurrent processing of messages that may be received from any consumed topic.
-
-		* `:worker_per_topic_partition` This strategy allocates a worker per topic partition. This means there will be a worker for every topic partition consumed. Unless you need to control concurrency across topics, you should use this strategy.
+2. The configuration options for the `GroupMember` consumer are a superset of those for `Kaffe.Consumer`. Additional options can be found in `Kaffe.Config.Consumer`.
 
       ```elixir
       config :kaffe,
@@ -306,7 +284,7 @@ It's possible that your topic and system are entirely ok with losing some messag
 
 `Kaffe.Producer` handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message. Kaffe automatically inserts a Kafka timestamp with each message.
 
-Configure your Kaffe Producer in your mix config
+Configure your Kaffe Producer in your mix config. For all options, see `Kaffe.Config.Producer`.
 
 ```elixir
 config :kaffe,
