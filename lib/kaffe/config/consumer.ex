@@ -24,7 +24,7 @@ defmodule Kaffe.Config.Consumer do
     manual (async) acknowledgement you will be able to process messages faster but will need to take on the burden
     of ensuring no messages are lost.
 
-  * `:start_with_earliest_message` If true the worker will consume from the  beginning of the topic when it first
+  * `:start_with_earliest_message` If true the worker will consume from the beginning of the topic when it first
     starts. This only affects consumer behavior before the consumer group starts recording its offsets in Kafka.
 
   * `:auto_start_producers` If true, `brod` client will spawn a producer automatically when user is trying
