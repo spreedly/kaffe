@@ -1,6 +1,14 @@
 # 1.28.0
 
+### Enhancements
+
 * Allow `auto_start_producers` and `allow_topic_auto_creation` to be configurable for brod clients. If configuration of either of these values is desired, update your producer or consumer configs.
+
+* Configures CI to run on pull request.
+
+### Fixes
+
+* Stops compiler warnings on duplicate doc definitions
 
 # 1.27.2
 
