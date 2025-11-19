@@ -63,7 +63,8 @@ defmodule Kaffe.Mixfile do
     [
       extras: [
         "README.md": [title: "Overview"],
-        "LICENSE.md": [title: "License"]
+        "LICENSE.md": [title: "License"],
+        "CHANGELOG.md": [title: "Changelog"]
       ],
       main: "readme",
       source_url: @source_url,
