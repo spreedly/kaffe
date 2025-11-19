@@ -33,7 +33,7 @@ defmodule Kaffe.Config.Producer do
      * -1: If it is -1 the broker will block until the message is committed by all in sync replicas before acking.
 
   * `:ack_timeout` Maximum time in milliseconds the broker can await the receipt of the number of
-    acknowledgements in `required_acks'. The timeout is not an exact limit on the request time. Defaults to 1000.
+    acknowledgements in `required_acks`. The timeout is not an exact limit on the request time. Defaults to 1000.
     See `brod` for more details.
 
   * `:partition_buffer_limit` How many requests (per-partition) can be buffered without blocking the caller.

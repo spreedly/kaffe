@@ -9,6 +9,7 @@
 ### Fixes
 
 * Stops compiler warnings on duplicate doc definitions
+* Fix doc formatting and typos
 
 # 1.27.2
 
