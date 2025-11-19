@@ -64,19 +64,19 @@ defmodule Kaffe.Config.Consumer do
     option, [`auto.offset.reset`](https://kafka.apache.org/documentation/#newconsumerconfigs). Valid values for
     this option are:
 
-		* `:reset_to_earliest` Reset to the earliest available offset.
-		* `:reset_to_latest` Reset to the latest offset.
-		* `:reset_by_subscriber` The subscriber receives the `OffsetOutOfRange` error.
+  * `:reset_to_earliest` Reset to the earliest available offset.
+  * `:reset_to_latest` Reset to the latest offset.
+  * `:reset_by_subscriber` The subscriber receives the `OffsetOutOfRange` error.
 
   More information in the [Brod consumer](https://github.com/klarna/brod/blob/master/src/brod_consumer.erl).
 
   * `:worker_allocation_strategy` Controls how workers are allocated with respect to consumed topics and partitions.
 
-		* `:worker_per_partition` The default (for backward compatibilty) and allocates a single worker per partition
+  * `:worker_per_partition` The default (for backward compatibilty) and allocates a single worker per partition
       across topics. This is useful for managing concurrent processing of messages that may be received from any
       consumed topic.
 
-		* `:worker_per_topic_partition` This strategy allocates a worker per topic partition. This means there will be
+  * `:worker_per_topic_partition` This strategy allocates a worker per topic partition. This means there will be
       a worker for every topic partition consumed. Unless you need to control concurrency across topics, you should
       use this strategy.
   """
