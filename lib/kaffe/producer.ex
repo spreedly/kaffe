@@ -83,7 +83,7 @@ defmodule Kaffe.Producer do
   @doc """
   Synchronously produce the `message_list` to `topic`/`partition`
 
-  `message_list` must be a list of type `message()` or `message_type()`
+  `message_list` must be a list of type `message()` or `message_object()`
 
   Alternatively, synchronously produce the `key`/`value` to `topic`
 
