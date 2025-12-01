@@ -25,7 +25,7 @@ defmodule Kaffe.MessageHandler do
 
   The response from the message handler is what dictates how a
   subscriber should deal with the message offset. Depending on the situation,
-  a message processor may not want to have it's most recent offsets committed.
+  a message processor may not want to have its most recent offsets committed.
 
   In some cases you may not want to commit back the most recent offset after
   processing a list of messages. For example, if you're batching messages to be
