@@ -44,7 +44,7 @@ jobs:
     # Step: Define how to cache deps. Restores existing cache if present.
     - name: Cache deps
       id: cache-deps
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       env:
         cache-name: cache-elixir-deps
       with:
@@ -54,11 +54,10 @@ jobs:
           ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ env.cache-name }}
 
     # Step: Define how to cache the `_build` directory. After the first run,
-    # this speeds up tests runs a lot. This includes not re-compiling our
-    # project's downloaded deps every run.
+    # this speeds up test runs. This includes not re-compiling our deps every run.
     - name: Cache compiled build
       id: cache-build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       env:
         cache-name: cache-compiled-build
       with:
