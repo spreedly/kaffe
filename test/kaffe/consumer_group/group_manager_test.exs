@@ -37,7 +37,7 @@ defmodule Kaffe.GroupManagerTest do
 
   test "subscribe from config" do
     Process.register(self(), :test_case)
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, _group_manager_pid} = GroupManager.start_link(config)
 
     :timer.sleep(config.rebalance_delay_ms)
@@ -52,7 +52,7 @@ defmodule Kaffe.GroupManagerTest do
 
   test "subscribe to topics dynamically" do
     Process.register(self(), :test_case)
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, _group_manager_pid} = GroupManager.start_link(config)
 
     :timer.sleep(config.rebalance_delay_ms)
@@ -74,7 +74,7 @@ defmodule Kaffe.GroupManagerTest do
 
   test "duplicate topic subscription does nothing" do
     Process.register(self(), :test_case)
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, _group_manager_pid} = GroupManager.start_link(config)
 
     :timer.sleep(config.rebalance_delay_ms)

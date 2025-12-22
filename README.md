@@ -76,8 +76,8 @@ There is also legacy support for single message consumers, which process one mes
 
       ```elixir
       config :kaffe,
-        consumers: %{
-          "subscriber_1" => [
+        consumers: [
+          subscriber_1: [
             endpoints: [kafka: 9092],
             topics: ["interesting-topic"],
             consumer_group: "your-app-consumer-group",
@@ -95,7 +95,7 @@ There is also legacy support for single message consumers, which process one mes
               password: System.get_env("KAFFE_PRODUCER_PASSWORD")
             }
           ],
-          "subscriber_2" => [
+          subscriber_2: [
             endpoints: [kafka: 9092],
             topics: ["topic-2"],
             consumer_group: "your-app-consumer-group",
@@ -104,7 +104,7 @@ There is also legacy support for single message consumers, which process one mes
             max_bytes: 50_000,
             worker_allocation_strategy: :worker_per_topic_partition
           ]
-      }
+        ]
       ```
 
 3. Add `Kaffe.GroupMemberSupervisor` as a supervisor in your supervision tree.
@@ -117,12 +117,12 @@ There is also legacy support for single message consumers, which process one mes
           children = [
             %{
               id: Kaffe.GroupMemberSupervisor.Subscriber1,
-              start: {Kaffe.GroupMemberSupervisor, :start_link, ["subscriber_1"]},
+              start: {Kaffe.GroupMemberSupervisor, :start_link, [:subscriber_1]},
               type: :supervisor
             },
             %{
               id: Kaffe.GroupMemberSupervisor.Subscriber2,
-              start: {Kaffe.GroupMemberSupervisor, :start_link, ["subscriber_2"]},
+              start: {Kaffe.GroupMemberSupervisor, :start_link, [:subscriber_2]},
               type: :supervisor
             }
           ]
@@ -201,16 +201,18 @@ _For backward compatibility only! `Kaffe.GroupMemberSupervisor` is recommended i
 
     ```elixir
     config :kaffe,
-      consumer: [
-        endpoints: [kafka: 9092], # that's [hostname: kafka_port]
-        topics: ["interesting-topic"], # the topic(s) that will be consumed
-        consumer_group: "your-app-consumer-group", # the consumer group for tracking offsets in Kafka
-        message_handler: MessageProcessor, # the module from Step 1 that will process messages
+      consumers: [
+        subscriber_1: [
+          endpoints: [kafka: 9092], # that's [hostname: kafka_port]
+          topics: ["interesting-topic"], # the topic(s) that will be consumed
+          consumer_group: "your-app-consumer-group", # the consumer group for tracking offsets in Kafka
+          message_handler: MessageProcessor, # the module from Step 1 that will process messages
 
-        # optional
-        async_message_ack: false, # see "async message acknowledgement" below
-        start_with_earliest_message: true # default false
-      ],
+          # optional
+          async_message_ack: false, # see "async message acknowledgement" below
+          start_with_earliest_message: true # default false
+        ]
+      ]
     ```
 
     The `start_with_earliest_message` field controls where your consumer group starts when it starts for the very first time. Once offsets have been committed to Kafka then they will supercede this option. If omitted, your consumer group will start processing from the most recent messages in the topic instead of consuming all available messages.
@@ -221,11 +223,13 @@ _For backward compatibility only! `Kaffe.GroupMemberSupervisor` is recommended i
 
     ```elixir
     config :kaffe,
-      consumer: [
-        heroku_kafka_env: true,
-        topics: ["interesting-topic"],
-        consumer_group: "your-app-consumer-group",
-        message_handler: MessageProcessor
+      consumers: [
+        subscriber_1: [
+          heroku_kafka_env: true,
+          topics: ["interesting-topic"],
+          consumer_group: "your-app-consumer-group",
+          message_handler: MessageProcessor
+        ]
       ]
     ```
 

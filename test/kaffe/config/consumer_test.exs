@@ -4,12 +4,12 @@ defmodule Kaffe.Config.ConsumerTest do
   def change_config(subscriber_name, update_fn) do
     config = Application.get_env(:kaffe, :consumers)[subscriber_name]
     config = update_fn.(config)
-    Application.put_env(:kaffe, :consumers, %{subscriber_name => config})
+    Application.put_env(:kaffe, :consumers, Keyword.new([{subscriber_name, config}]))
   end
 
   describe "configuration/1" do
     setup do
-      change_config("subscriber_name", fn config ->
+      change_config(:subscriber_name, fn config ->
         config
         |> Keyword.delete(:offset_reset_policy)
         |> Keyword.delete(:ssl)
@@ -18,9 +18,9 @@ defmodule Kaffe.Config.ConsumerTest do
     end
 
     test "correct settings are extracted" do
-      sasl = Kaffe.Config.Consumer.config_get!("subscriber_name", :sasl)
+      sasl = Kaffe.Config.Consumer.config_get!(:subscriber_name, :sasl)
 
-      change_config("subscriber_name", fn config ->
+      change_config(:subscriber_name, fn config ->
         config |> Keyword.delete(:sasl)
       end)
 
@@ -52,18 +52,18 @@ defmodule Kaffe.Config.ConsumerTest do
       }
 
       on_exit(fn ->
-        change_config("subscriber_name", fn config ->
+        change_config(:subscriber_name, fn config ->
           Keyword.put(config, :sasl, sasl)
         end)
       end)
 
-      assert Kaffe.Config.Consumer.configuration("subscriber_name") == expected
+      assert Kaffe.Config.Consumer.configuration(:subscriber_name) == expected
     end
 
     test "string endpoints parsed correctly" do
-      endpoints = Kaffe.Config.Consumer.config_get!("subscriber_name", :endpoints)
+      endpoints = Kaffe.Config.Consumer.config_get!(:subscriber_name, :endpoints)
 
-      change_config("subscriber_name", fn config ->
+      change_config(:subscriber_name, fn config ->
         config |> Keyword.put(:endpoints, "kafka:9092,localhost:9092")
       end)
 
@@ -95,19 +95,19 @@ defmodule Kaffe.Config.ConsumerTest do
       }
 
       on_exit(fn ->
-        change_config("subscriber_name", fn config ->
+        change_config(:subscriber_name, fn config ->
           Keyword.put(config, :endpoints, endpoints)
         end)
       end)
 
-      assert Kaffe.Config.Consumer.configuration("subscriber_name") == expected
+      assert Kaffe.Config.Consumer.configuration(:subscriber_name) == expected
     end
   end
 
   test "correct settings with sasl plain are extracted" do
-    sasl = Kaffe.Config.Consumer.config_get!("subscriber_name", :sasl)
+    sasl = Kaffe.Config.Consumer.config_get!(:subscriber_name, :sasl)
 
-    change_config("subscriber_name", fn config ->
+    change_config(:subscriber_name, fn config ->
       Keyword.put(config, :sasl, %{mechanism: :plain, login: "Alice", password: "ecilA"})
     end)
 
@@ -140,18 +140,18 @@ defmodule Kaffe.Config.ConsumerTest do
     }
 
     on_exit(fn ->
-      change_config("subscriber_name", fn config ->
+      change_config(:subscriber_name, fn config ->
         Keyword.put(config, :sasl, sasl)
       end)
     end)
 
-    assert Kaffe.Config.Consumer.configuration("subscriber_name") == expected
+    assert Kaffe.Config.Consumer.configuration(:subscriber_name) == expected
   end
 
   test "correct settings with ssl are extracted" do
-    ssl = Kaffe.Config.Consumer.config_get("subscriber_name", :ssl, false)
+    ssl = Kaffe.Config.Consumer.config_get(:subscriber_name, :ssl, false)
 
-    change_config("subscriber_name", fn config ->
+    change_config(:subscriber_name, fn config ->
       Keyword.put(config, :ssl, true)
     end)
 
@@ -184,21 +184,21 @@ defmodule Kaffe.Config.ConsumerTest do
     }
 
     on_exit(fn ->
-      change_config("subscriber_name", fn config ->
+      change_config(:subscriber_name, fn config ->
         Keyword.put(config, :ssl, ssl)
       end)
     end)
 
-    assert Kaffe.Config.Consumer.configuration("subscriber_name") == expected
+    assert Kaffe.Config.Consumer.configuration(:subscriber_name) == expected
   end
 
   describe "offset_reset_policy" do
     test "computes correctly from start_with_earliest_message == true" do
-      change_config("subscriber_name", fn config ->
+      change_config(:subscriber_name, fn config ->
         config |> Keyword.delete(:offset_reset_policy)
       end)
 
-      assert Kaffe.Config.Consumer.configuration("subscriber_name").offset_reset_policy == :reset_by_subscriber
+      assert Kaffe.Config.Consumer.configuration(:subscriber_name).offset_reset_policy == :reset_by_subscriber
     end
   end
 end

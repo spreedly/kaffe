@@ -36,7 +36,7 @@ defmodule Kaffe.WorkerManagerTest do
   end
 
   defp consumer_config() do
-    Kaffe.Config.Consumer.configuration("subscriber_name")
+    Kaffe.Config.Consumer.configuration(:subscriber_name)
   end
 
   defp configure_strategy(worker_manager_pid, strategy) do

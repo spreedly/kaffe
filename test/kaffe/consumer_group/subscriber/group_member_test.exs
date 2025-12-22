@@ -44,7 +44,7 @@ defmodule Kaffe.GroupMemberTest do
 
   test "handle assignments_received" do
     Process.register(self(), :test_case)
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic", config)
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
@@ -59,7 +59,7 @@ defmodule Kaffe.GroupMemberTest do
 
   test "handle assignments_revoked" do
     Process.register(self(), :test_case)
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic", config)
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])
@@ -77,7 +77,7 @@ defmodule Kaffe.GroupMemberTest do
 
   test "handle assignments_received without assignments_revoked" do
     Process.register(self(), :test_case)
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, pid} = GroupMember.start_link("subscriber_name", "consumer_group", self(), "topic", config)
 
     GroupMember.assignments_received(pid, self(), 1, [{:brod_received_assignment, "topic", 0, 1}])

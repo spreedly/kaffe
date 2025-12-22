@@ -1,3 +1,9 @@
+# 2.0.0
+
+### Breaking Changes
+
+* Allow keyword configuration for subscribers. Note, keywords require atom keys, so if your current version of `kaffe` is 1.27.0 or higher, adopting to the keyword subscribers is a breaking (and highly encouraged) change.
+
 # 1.28.0
 
 ### Enhancements

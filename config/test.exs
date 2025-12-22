@@ -4,8 +4,8 @@ config :kaffe,
   kafka_mod: TestBrod,
   group_subscriber_mod: TestBrodGroupSubscriber,
   test_partition_count: 32,
-  consumers: %{
-    "subscriber_name" => [
+  consumers: [
+    subscriber_name: [
       endpoints: [kafka: 9092],
       topics: ["kaffe-test"],
       consumer_group: "kaffe-test-group",
@@ -24,7 +24,7 @@ config :kaffe,
         password: System.get_env("KAFFE_PRODUCER_PASSWORD")
       }
     ]
-  },
+  ],
   producer: [
     endpoints: [kafka: 9092],
     topics: ["kaffe-test"],

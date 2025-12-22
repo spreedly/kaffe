@@ -108,8 +108,11 @@ defmodule Kaffe.Config.Consumer do
 
   def consumer_group(config_key), do: config_get!(config_key, :consumer_group)
 
-  def subscriber_name(config_key),
-    do: config_get(config_key, :subscriber_name, consumer_group(config_key)) |> String.to_atom()
+  def subscriber_name(config_key) do
+    config_key
+    |> config_get!(:subscriber_name)
+    |> to_atom()
+  end
 
   def topics(config_key), do: config_get!(config_key, :topics)
 
@@ -215,7 +218,7 @@ defmodule Kaffe.Config.Consumer do
 
   def config_get!(config_key, key) do
     Application.get_env(:kaffe, :consumers)
-    |> Map.get(config_key)
+    |> Access.get(config_key)
     |> Keyword.fetch!(key)
   end
 
@@ -223,26 +226,29 @@ defmodule Kaffe.Config.Consumer do
 
   def config_get(config_key, key, default) do
     Application.get_env(:kaffe, :consumers)
-    |> Map.get(config_key)
+    |> Access.get(config_key)
     |> Keyword.get(key, default)
   end
 
   def validate_configuration!() do
     if Application.get_env(:kaffe, :consumers) == nil do
       old_config = Application.get_env(:kaffe, :consumer) || []
-      subscriber_name = old_config |> Keyword.get(:subscriber_name, "subscriber_name")
+      subscriber_name = old_config |> Keyword.get(:subscriber_name, :subscriber_name)
 
       raise("""
       UPDATE CONSUMERS CONFIG:
 
-      Set :kaffe, :consumers to a map with subscriber names as keys and config as values.
+      Set :kaffe, :consumers to a keyword list with subscriber names as keys and config as values.
       For example:
 
       config :kaffe,
-        consumers: %{
+        consumers: [
           #{inspect(subscriber_name)} => #{inspect(old_config)}
-        }
+        ]
       """)
     end
   end
+
+  defp to_atom(val) when is_atom(val), do: val
+  defp to_atom(val) when is_binary(val), do: String.to_atom(val)
 end

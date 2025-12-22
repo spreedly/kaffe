@@ -45,7 +45,7 @@ defmodule Kaffe.SubscriberTest do
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [], config)
     send(pid, {self(), build_message_set()})
 
@@ -57,7 +57,7 @@ defmodule Kaffe.SubscriberTest do
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [], config)
     Process.unlink(pid)
     Process.monitor(pid)
@@ -80,7 +80,7 @@ defmodule Kaffe.SubscriberTest do
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(0)
 
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [], config)
     Process.unlink(pid)
     Process.monitor(pid)
@@ -95,7 +95,7 @@ defmodule Kaffe.SubscriberTest do
     Process.register(self(), :test_case)
     {:ok, kafka_pid} = TestKafka.start_link(1)
 
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [], config)
 
     assert_receive {:subscribe, {:error, :no_available_offsets}}
@@ -110,7 +110,7 @@ defmodule Kaffe.SubscriberTest do
     {:ok, kafka_pid} = TestKafka.start_link(2)
     Process.monitor(kafka_pid)
 
-    config = Kaffe.Config.Consumer.configuration("subscriber_name")
+    config = Kaffe.Config.Consumer.configuration(:subscriber_name)
     {:ok, subscriber_pid} = Subscriber.subscribe("subscriber_name", self(), self(), 1, "topic", 0, [], config)
 
     assert_receive {:subscribe, {:error, :no_available_offsets}}
