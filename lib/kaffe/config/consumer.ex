@@ -52,6 +52,9 @@ defmodule Kaffe.Config.Consumer do
   * `:max_wait_time` Sets the maximum number of milliseconds that the broker is allowed to collect min_bytes of
     messages in a batch of messages.
 
+  * `:sleep_timeout` Allows consumer process to sleep this amount of ms if kafka replied 'empty' message set.
+    The default is 1s.
+
   * `:subscriber_retries` The number of times a subscriber will retry subscribing to a topic. Defaults to 5.
 
   * `:subscriber_retry_delay_ms` The ms a subscriber will delay connecting to a topic after a failure. Defaults to 5000.
@@ -98,6 +101,7 @@ defmodule Kaffe.Config.Consumer do
       max_bytes: max_bytes(config_key),
       min_bytes: min_bytes(config_key),
       max_wait_time: max_wait_time(config_key),
+      sleep_timeout: sleep_timeout(config_key),
       subscriber_retries: subscriber_retries(config_key),
       subscriber_retry_delay_ms: subscriber_retry_delay_ms(config_key),
       offset_reset_policy: offset_reset_policy(config_key),
@@ -149,6 +153,10 @@ defmodule Kaffe.Config.Consumer do
 
   def max_wait_time(config_key) do
     config_get(config_key, :max_wait_time, 10_000)
+  end
+
+  def sleep_timeout(config_key) do
+    config_get(config_key, :sleep_timeout, 1_000)
   end
 
   def subscriber_retries(config_key) do
