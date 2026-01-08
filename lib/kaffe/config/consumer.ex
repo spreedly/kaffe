@@ -55,6 +55,12 @@ defmodule Kaffe.Config.Consumer do
   * `:sleep_timeout` Allows consumer process to sleep this amount of ms if kafka replied 'empty' message set.
     The default is 1s.
 
+  * `:prefetch_count` Sets the window size (number of messages) allowed to fetch-ahead. The default is 10 messages.
+
+  * `:prefetch_bytes` Sets the total number of bytes allowed to fetch-ahead. `brod_consumer` is greed, it only stops
+    fetching more messages in when number of unacked messages has exceeded `prefetch_count` AND the unacked total
+    volume has exceeded `prefetch_bytes`. The default is 100KB.
+
   * `:subscriber_retries` The number of times a subscriber will retry subscribing to a topic. Defaults to 5.
 
   * `:subscriber_retry_delay_ms` The ms a subscriber will delay connecting to a topic after a failure. Defaults to 5000.
@@ -102,6 +108,8 @@ defmodule Kaffe.Config.Consumer do
       min_bytes: min_bytes(config_key),
       max_wait_time: max_wait_time(config_key),
       sleep_timeout: sleep_timeout(config_key),
+      prefetch_count: prefetch_count(config_key),
+      prefetch_bytes: prefetch_bytes(config_key),
       subscriber_retries: subscriber_retries(config_key),
       subscriber_retry_delay_ms: subscriber_retry_delay_ms(config_key),
       offset_reset_policy: offset_reset_policy(config_key),
@@ -157,6 +165,14 @@ defmodule Kaffe.Config.Consumer do
 
   def sleep_timeout(config_key) do
     config_get(config_key, :sleep_timeout, 1_000)
+  end
+
+  def prefetch_count(config_key) do
+    config_get(config_key, :prefetch_count, 10)
+  end
+
+  def prefetch_bytes(config_key) do
+    config_get(config_key, :prefetch_bytes, 102_400)
   end
 
   def subscriber_retries(config_key) do
