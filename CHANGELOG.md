@@ -15,7 +15,7 @@
     ]
     ```
 
-    For more information and to see other supported compression types, see [kafka_protocol's README](https://github.com/kafka4beam/kafka_protocol/blob/master/README.md#compression-support).
+    For more information and to see other supported compression types, see [kafka_protocol's README](https://github.com/kafka4beam/kafka_protocol/blob/master/README.md#compression).
 
 ### Enhancements
 
