@@ -22,8 +22,8 @@ defmodule TestBrod do
     {:ok, Process.whereis(TestBrod)}
   end
 
-  def produce_sync(_client, topic, partition, key, value) do
-    GenServer.call(TestBrod, {:produce_sync, topic, partition, key, value})
+  def produce_sync(client, topic, partition, key, value) do
+    GenServer.call(TestBrod, {:produce_sync, client, topic, partition, key, value})
   end
 
   def get_partitions_count(_client, _topic), do: {:ok, @test_partition_count}
@@ -36,8 +36,8 @@ defmodule TestBrod do
     {:ok, %{produce_response: :ok}}
   end
 
-  def handle_call({:produce_sync, topic, partition, key, value}, _from, state) do
-    send(:test_case, [:produce_sync, topic, partition, key, value])
+  def handle_call({:produce_sync, client, topic, partition, key, value}, _from, state) do
+    send(:test_case, [:produce_sync, client, topic, partition, key, value])
     {:reply, state.produce_response, state}
   end
 

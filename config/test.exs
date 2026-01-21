@@ -25,12 +25,14 @@ config :kaffe,
       }
     ]
   ],
-  producer: [
-    endpoints: [kafka: 9092],
-    topics: ["kaffe-test"],
-    sasl: %{
-      mechanism: :plain,
-      login: System.get_env("KAFFE_PRODUCER_USER"),
-      password: System.get_env("KAFFE_PRODUCER_PASSWORD")
-    }
+  producers: [
+    producer_name: [
+      endpoints: [kafka: 9092],
+      topics: ["kaffe-test"],
+      sasl: %{
+        mechanism: :plain,
+        login: System.get_env("KAFFE_PRODUCER_USER"),
+        password: System.get_env("KAFFE_PRODUCER_PASSWORD")
+      }
+    ]
   ]

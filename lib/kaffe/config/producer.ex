@@ -58,78 +58,140 @@ defmodule Kaffe.Config.Producer do
 
   import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1]
 
-  def configuration do
+  require Logger
+
+  @default_producer_config_key :producer
+
+  def configuration(config_key) do
     %{
-      endpoints: endpoints(),
-      producer_config: client_producer_config(),
-      client_name: config_get(:client_name, :kaffe_producer_client),
-      topics: producer_topics(),
-      partition_strategy: config_get(:partition_strategy, :md5)
+      endpoints: endpoints(config_key),
+      producer_config: client_producer_config(config_key),
+      client_name: client_name(config_key),
+      topics: producer_topics(config_key),
+      partition_strategy: partition_strategy(config_key)
     }
   end
 
-  def producer_topics, do: config_get!(:topics)
+  def producer_topics(config_key), do: config_get!(config_key, :topics)
 
-  def endpoints do
-    if heroku_kafka?() do
+  def endpoints(config_key) do
+    if heroku_kafka?(config_key) do
       heroku_kafka_endpoints()
     else
-      parse_endpoints(config_get!(:endpoints))
+      parse_endpoints(config_get!(config_key, :endpoints))
     end
   end
 
-  def client_producer_config do
-    default_client_producer_config() ++ maybe_heroku_kafka_ssl() ++ sasl_options() ++ ssl_options()
+  def client_producer_config(config_key) do
+    default_client_producer_config(config_key) ++
+      maybe_heroku_kafka_ssl(config_key) ++
+      sasl_options(config_key) ++
+      ssl_options(config_key)
   end
 
-  def sasl_options do
-    :sasl
-    |> config_get(%{})
+  def client_name(config_key) do
+    config_get(config_key, :client_name, :"kaffe_producer_client_#{config_key}")
+  end
+
+  def partition_strategy(config_key) do
+    config_get(config_key, :partition_strategy, :md5)
+  end
+
+  def sasl_options(config_key) do
+    config_key
+    |> config_get(:sasl, %{})
     |> Kaffe.Config.sasl_config()
   end
 
-  def maybe_heroku_kafka_ssl do
-    case heroku_kafka?() do
+  def maybe_heroku_kafka_ssl(config_key) do
+    case heroku_kafka?(config_key) do
       true -> Kaffe.Config.ssl_config()
       false -> []
     end
   end
 
-  def ssl_options do
-    :ssl
-    |> config_get(false)
+  def ssl_options(config_key) do
+    config_key
+    |> config_get(:ssl, false)
     |> Kaffe.Config.ssl_config()
   end
 
-  def default_client_producer_config do
+  def default_client_producer_config(config_key) do
     [
-      auto_start_producers: config_get(:auto_start_producers, true),
-      allow_topic_auto_creation: config_get(:allow_topic_auto_creation, false),
+      auto_start_producers: config_get(config_key, :auto_start_producers, true),
+      allow_topic_auto_creation: config_get(config_key, :allow_topic_auto_creation, false),
       default_producer_config: [
-        required_acks: config_get(:required_acks, -1),
-        ack_timeout: config_get(:ack_timeout, 1000),
-        partition_buffer_limit: config_get(:partition_buffer_limit, 512),
-        partition_onwire_limit: config_get(:partition_onwire_limit, 1),
-        max_batch_size: config_get(:max_batch_size, 1_048_576),
-        max_retries: config_get(:max_retries, 3),
-        retry_backoff_ms: config_get(:retry_backoff_ms, 500),
-        compression: config_get(:compression, :no_compression),
-        min_compression_batch_size: config_get(:min_compression_batch_size, 1024)
+        required_acks: config_get(config_key, :required_acks, -1),
+        ack_timeout: config_get(config_key, :ack_timeout, 1000),
+        partition_buffer_limit: config_get(config_key, :partition_buffer_limit, 512),
+        partition_onwire_limit: config_get(config_key, :partition_onwire_limit, 1),
+        max_batch_size: config_get(config_key, :max_batch_size, 1_048_576),
+        max_retries: config_get(config_key, :max_retries, 3),
+        retry_backoff_ms: config_get(config_key, :retry_backoff_ms, 500),
+        compression: config_get(config_key, :compression, :no_compression),
+        min_compression_batch_size: config_get(config_key, :min_compression_batch_size, 1024)
       ]
     ]
   end
 
-  def heroku_kafka? do
-    config_get(:heroku_kafka_env, false)
+  def heroku_kafka?(config_key) do
+    config_get(config_key, :heroku_kafka_env, false)
   end
 
-  def config_get!(key) do
-    Application.get_env(:kaffe, :producer)
+  def config_get!(config_key, key) do
+    :kaffe
+    |> Application.get_env(:producers)
+    |> Access.fetch!(config_key)
     |> Keyword.fetch!(key)
   end
 
-  def config_get(key, default) do
-    Application.get_env(:kaffe, :producer)
+  def config_get(config_key, key, default) do
+    :kaffe
+    |> Application.get_env(:producers)
+    |> Access.fetch!(config_key)
     |> Keyword.get(key, default)
+  end
+
+  def list_config_keys do
+    :kaffe
+    |> Application.get_env(:producers)
+    |> Enum.map(&elem(&1, 0))
+  end
+
+  @doc """
+  Sets :kaffe, :producers application env if :kaffe, :producer is present.
+
+  Provides backward compatibility between single producer and multiple producers.
+  `:#{@default_producer_config_key}` config key is used for multiple producers config.
+  """
+  @spec maybe_set_producers_env!() :: :ok
+  def maybe_set_producers_env! do
+    single_config = Application.get_env(:kaffe, :producer) || []
+    multiple_config = Application.get_env(:kaffe, :producers) || []
+
+    if !Enum.empty?(single_config) and !Enum.empty?(multiple_config) do
+      raise("""
+      FOUND SINGLE PRODUCER AND MULTIPLE PRODUCERS CONFIG:
+
+      Delete `:kaffe, :producers` or `:kaffe, :producer` configuration.
+      """)
+    end
+
+    if !Enum.empty?(single_config) and Enum.empty?(multiple_config) do
+      multiple_config = [{@default_producer_config_key, single_config}]
+
+      Logger.info("""
+      Configuration for single producer is specified in :kaffe, :producer.
+
+      To ensure backward compatibility :kaffe, :producers was set to a map \
+      with default producer name as the key and single producer config as the value:
+
+      config :kaffe, producers: #{inspect(multiple_config)}
+      """)
+
+      Application.put_env(:kaffe, :producers, multiple_config)
+    end
+
+    :ok
   end
 end

@@ -285,7 +285,9 @@ It's possible that your topic and system are entirely ok with losing some messag
 
 `Kaffe.Producer` handles producing messages to Kafka and will automatically select the topic partitions per message or can be given a function to call to determine the partition per message. Kaffe automatically inserts a Kafka timestamp with each message.
 
-Configure your Kaffe Producer in your mix config. For all options, see `Kaffe.Config.Producer`.
+Configure your Kaffe Producer(s) in your mix config. For all options, see `Kaffe.Config.Producer`.
+
+Single Producer configuration: 
 
 ```elixir
 config :kaffe,
@@ -301,6 +303,31 @@ config :kaffe,
       login: System.get_env("KAFFE_PRODUCER_USER"),
       password: System.get_env("KAFFE_PRODUCER_PASSWORD")
     }
+  ]
+```
+
+Multiple Producers configuration:
+
+```elixir
+config :kaffe,
+  producers: [
+    producer_1: [
+      endpoints: [kafka1: 9092], # [hostname: port]
+      topics: ["kafka-topic"],
+  
+      # optional
+      partition_strategy: :md5,
+      ssl: true,
+      sasl: %{
+        mechanism: :plain,
+        login: System.get_env("KAFFE_PRODUCER_USER"),
+        password: System.get_env("KAFFE_PRODUCER_PASSWORD")
+      }
+    ],
+    producer_2: [
+      endpoints: [kafka2: 9092], # [hostname: port]
+      topics: ["another-kafka-topic"]
+    ]
   ]
 ```
 
@@ -352,6 +379,10 @@ There are several ways to produce:
     Kaffe.Producer.produce_sync("topic", [{"key1", "value1"}, {"key2", "value2"}])
     ```
 
+    ```elixir
+    Kaffe.Producer.produce_sync_with_client(:producer_1, "topic", [{"key1", "value1"}, {"key2", "value2"}])
+    ```
+
 - `topic`/`partition`/`message_list` - Produce each message in the list to the given `topic`/`partition`.
 
     Each item in the list is a tuple of the key and value: `{key, value}`.
@@ -360,10 +391,18 @@ There are several ways to produce:
     Kaffe.Producer.produce_sync("topic", 2, [{"key1", "value1"}, {"key2", "value2"}])
     ```
 
+    ```elixir
+    Kaffe.Producer.produce_sync_with_client(:producer_1, "topic", 2, [{"key1", "value1"}, {"key2", "value2"}])
+    ```
+
 - `key`/`value` - The key/value will be produced to the first topic given to the producer when it was started. The partition will be selected with the chosen strategy or given function.
 
     ```elixir
     Kaffe.Producer.produce_sync("key", "value")
+    ```
+
+    ```elixir
+    Kaffe.Producer.produce_sync_with_client(:producer_1, "key", "value")
     ```
 
 - `topic`/`key`/`value` - The key/value will be produced to the given topic.
@@ -372,10 +411,18 @@ There are several ways to produce:
     Kaffe.Producer.produce_sync("whitelist", "key", "value")
     ```
 
+    ```elixir
+    Kaffe.Producer.produce_sync_with_client(:producer_1, "whitelist", "key", "value")
+    ```
+
 - `topic`/`partition`/`key`/`value` - The key/value will be produced to the given topic/partition.
 
     ```elixir
     Kaffe.Producer.produce_sync("whitelist", 2, "key", "value")
+    ```
+
+    ```elixir
+    Kaffe.Producer.produce_sync_with_client(:producer_1, "whitelist", 2, "key", "value")
     ```
 
     **NOTE**: With this approach Kaffe will not calculate the next partition since it assumes you're taking over that job by giving it a specific partition.

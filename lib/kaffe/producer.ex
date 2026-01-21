@@ -9,6 +9,8 @@ defmodule Kaffe.Producer do
   Currently only synchronous production is supported.
   """
 
+  alias Kaffe.Config.Producer, as: ProducerConfig
+
   @kafka Application.compile_env(:kaffe, :kafka_mod, :brod)
 
   @typedoc """
@@ -30,14 +32,28 @@ defmodule Kaffe.Producer do
   """
   @type headers :: [{key :: binary(), value :: binary()}]
 
+  @typedoc """
+  The method by which a partition in a topic is selected for sending a message
+  """
+  @type partition_strategy ::
+          :md5
+          | :random
+          | (topic :: binary(), partitions_count :: integer(), key :: binary(), value :: binary() ->
+               partition :: integer())
+
+  @typedoc """
+  The name of the producer in the configuration that will be used to send the message
+  """
+  @type config_key :: atom() | binary()
+
   require Logger
 
   ## -------------------------------------------------------------------------
   ## public api
   ## -------------------------------------------------------------------------
 
-  def start_producer_client do
-    @kafka.start_client(config().endpoints, client_name(), config().producer_config)
+  def start_producer_client(config) do
+    @kafka.start_client(config.endpoints, config.client_name, config.producer_config)
   end
 
   @doc """
@@ -52,8 +68,10 @@ defmodule Kaffe.Producer do
        * `:ok` on successfully producing each message
        * `{:error, reason}` for any error
   """
+  @spec produce(binary(), list(message() | message_object()), partition_strategy: partition_strategy()) ::
+          :ok | {:error, any()}
   def produce(topic, message_list, opts \\ []) do
-    produce_list(topic, message_list, partition_strategy_from(opts))
+    produce_with_client(first_config_key(), topic, message_list, opts)
   end
 
   @doc """
@@ -71,13 +89,14 @@ defmodule Kaffe.Producer do
        * `:ok` on successfully producing each message
        * `{:error, reason}` for any error
   """
+  @spec produce_sync(topic :: binary(), message_list :: list(message() | message_object())) :: :ok | {:error, any()}
   def produce_sync(topic, message_list) when is_list(message_list) do
-    produce_list(topic, message_list, global_partition_strategy())
+    produce_sync_with_client(first_config_key(), topic, message_list)
   end
 
+  @spec produce_sync(key :: binary(), value :: binary()) :: :ok | {:error, any()}
   def produce_sync(key, value) do
-    topic = config().topics |> List.first()
-    produce_value(topic, key, value)
+    produce_sync_with_client(first_config_key(), key, value)
   end
 
   @doc """
@@ -92,12 +111,15 @@ defmodule Kaffe.Producer do
        * `:ok` on successfully producing each message
        * `{:error, reason}` for any error
   """
+  @spec produce_sync(topic :: binary(), partition :: integer(), message_list :: list(message() | message_object())) ::
+          :ok | {:error, any()}
   def produce_sync(topic, partition, message_list) when is_list(message_list) do
-    produce_list(topic, message_list, fn _, _, _, _ -> partition end)
+    produce_sync_with_client(first_config_key(), topic, partition, message_list)
   end
 
+  @spec produce_sync(topic :: binary(), key :: binary(), value :: binary()) :: :ok | {:error, any()}
   def produce_sync(topic, key, value) do
-    produce_value(topic, key, value)
+    produce_sync_with_client(first_config_key(), topic, key, value)
   end
 
   @doc """
@@ -105,23 +127,126 @@ defmodule Kaffe.Producer do
 
   See `produce_sync/2` for returns.
   """
+  @spec produce_sync(topic :: binary(), partition :: integer(), key :: binary(), value :: binary()) ::
+          :ok | {:error, any()}
   def produce_sync(topic, partition, key, value) do
-    @kafka.produce_sync(client_name(), topic, partition, key, value)
+    produce_sync_with_client(first_config_key(), topic, partition, key, value)
+  end
+
+  @doc """
+  Synchronously produce the `messages_list` to `topic` using the specified client
+
+  - `messages_list` must be a list of type `message()` or `message_object()`
+  - `opts` may include the partition strategy to use,
+    `partition_strategy: :md5`, or `:random` or a function.
+
+  Returns:
+
+    * `:ok` on successfully producing each message
+    * `{:error, reason}` for any error
+  """
+  @spec produce_with_client(
+          config_key :: config_key(),
+          topic :: binary(),
+          list(message() | message_object()),
+          partition_strategy: partition_strategy()
+        ) :: :ok | {:error, any()}
+  def produce_with_client(config_key, topic, message_list, opts \\ []) do
+    produce_list(config_key, topic, message_list, partition_strategy_from(config_key, opts))
+  end
+
+  @doc """
+  Synchronously produce the `message_list` to `topic` using the specified client
+
+  `messages` must be a list of type `message()` or `message_object()`
+
+  Alternatively, synchronously produce the given `key`/`value` to the first Kafka topic.
+
+  This is a simpler way to produce if you've only given Producer a single topic
+  for production and don't want to specify the topic for each call.
+
+  Returns:
+
+    * `:ok` on successfully producing each message
+    * `{:error, reason}` for any error
+  """
+  @spec produce_sync_with_client(
+          config_key :: config_key(),
+          topic :: binary(),
+          message_list :: list(message() | message_object())
+        ) :: :ok | {:error, any()}
+  def produce_sync_with_client(config_key, topic, message_list) when is_list(message_list) do
+    produce_list(config_key, topic, message_list, global_partition_strategy(config_key))
+  end
+
+  @spec produce_sync_with_client(config_key :: config_key(), key :: binary(), value :: binary()) ::
+          :ok | {:error, any()}
+  def produce_sync_with_client(config_key, key, value) do
+    topic = config(config_key).topics |> List.first()
+    produce_value(config_key, topic, key, value)
+  end
+
+  @doc """
+  Synchronously produce the `message_list` to `topic`/`partition` using the specified client
+
+  `message_list` must be a list of type `message()` or `message_object()`
+
+  Alternatively, synchronously produce the `key`/`value` to `topic`
+
+  Returns:
+
+    * `:ok` on successfully producing each message
+    * `{:error, reason}` for any error
+  """
+  @spec produce_sync_with_client(
+          config_key :: config_key(),
+          topic :: binary(),
+          partition :: integer(),
+          message_list :: list(message() | message_object())
+        ) :: :ok | {:error, any()}
+  def produce_sync_with_client(config_key, topic, partition, message_list) when is_list(message_list) do
+    produce_list(config_key, topic, message_list, fn _, _, _, _ -> partition end)
+  end
+
+  @spec produce_sync_with_client(
+          config_key :: config_key(),
+          topic :: binary(),
+          key :: binary(),
+          value :: binary()
+        ) :: :ok | {:error, any()}
+  def produce_sync_with_client(config_key, topic, key, value) do
+    produce_value(config_key, topic, key, value)
+  end
+
+  @doc """
+  Synchronously produce the given `key`/`value` to the `topic`/`partition` using the specified client
+
+  See `produce_sync/2` for returns.
+  """
+  @spec produce_sync_with_client(
+          config_key :: config_key(),
+          topic :: binary(),
+          partition :: integer(),
+          key :: binary(),
+          value :: binary()
+        ) :: :ok | {:error, any()}
+  def produce_sync_with_client(config_key, topic, partition, key, value) do
+    @kafka.produce_sync(client_name(config_key), topic, partition, key, value)
   end
 
   ## -------------------------------------------------------------------------
   ## internal
   ## -------------------------------------------------------------------------
 
-  defp produce_list(topic, message_list, partition_strategy) when is_list(message_list) do
-    Logger.debug("event#produce_list topic=#{topic}")
+  defp produce_list(config_key, topic, message_list, partition_strategy) when is_list(message_list) do
+    Logger.debug("event#produce_list config_key=#{config_key} topic=#{topic}")
 
     message_list
-    |> add_timestamp
-    |> group_by_partition(topic, partition_strategy)
+    |> add_timestamp()
+    |> group_by_partition(config_key, topic, partition_strategy)
     |> case do
       messages = %{} ->
-        produce_list_to_topic(messages, topic)
+        produce_list_to_topic(config_key, messages, topic)
 
       {:error, reason} ->
         Logger.warning("Error while grouping by partition #{inspect(reason)}")
@@ -129,19 +254,19 @@ defmodule Kaffe.Producer do
     end
   end
 
-  defp produce_value(topic, key, value) do
-    case @kafka.get_partitions_count(client_name(), topic) do
+  defp produce_value(config_key, topic, key, value) do
+    case @kafka.get_partitions_count(client_name(config_key), topic) do
       {:ok, partitions_count} ->
-        partition = choose_partition(topic, partitions_count, key, value, global_partition_strategy())
+        partition = choose_partition(topic, partitions_count, key, value, global_partition_strategy(config_key))
 
         Logger.debug(
-          "event#produce topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
+          "event#produce config_key=#{config_key} topic=#{topic} key=#{key} partitions_count=#{partitions_count} selected_partition=#{partition}"
         )
 
-        @kafka.produce_sync(client_name(), topic, partition, key, value)
+        @kafka.produce_sync(client_name(config_key), topic, partition, key, value)
 
       error ->
-        Logger.warning("event#produce topic=#{topic} key=#{key} error=#{inspect(error)}")
+        Logger.warning("event#produce config_key=#{config_key} topic=#{topic} key=#{key} error=#{inspect(error)}")
 
         error
     end
@@ -159,8 +284,8 @@ defmodule Kaffe.Producer do
 
   defp add_timestamp_to_message({key, message}), do: {System.system_time(:millisecond), key, message}
 
-  defp group_by_partition(messages, topic, partition_strategy) do
-    with {:ok, partitions_count} <- @kafka.get_partitions_count(client_name(), topic) do
+  defp group_by_partition(messages, config_key, topic, partition_strategy) do
+    with {:ok, partitions_count} <- @kafka.get_partitions_count(client_name(config_key), topic) do
       messages
       |> Enum.group_by(fn
         {_timestamp, key, message} ->
@@ -172,22 +297,22 @@ defmodule Kaffe.Producer do
     end
   end
 
-  defp produce_list_to_topic(message_list, topic) do
+  defp produce_list_to_topic(config_key, message_list, topic) do
     message_list
     |> Enum.reduce_while(:ok, fn {partition, messages}, :ok ->
-      Logger.debug("event#produce_list_to_topic topic=#{topic} partition=#{partition}")
+      Logger.debug("event#produce_list_to_topic config_key=#{config_key} topic=#{topic} partition=#{partition}")
 
-      case @kafka.produce_sync(client_name(), topic, partition, "ignored", messages) do
+      case @kafka.produce_sync(client_name(config_key), topic, partition, "ignored", messages) do
         :ok -> {:cont, :ok}
         {:error, _reason} = error -> {:halt, error}
       end
     end)
   end
 
-  defp partition_strategy_from(opts) do
+  defp partition_strategy_from(config_key, opts) do
     case Keyword.fetch(opts, :partition_strategy) do
       {:ok, partition_strategy} -> partition_strategy
-      :error -> global_partition_strategy()
+      :error -> global_partition_strategy(config_key)
     end
   end
 
@@ -203,15 +328,19 @@ defmodule Kaffe.Producer do
     fun.(topic, partitions_count, key, value)
   end
 
-  defp client_name do
-    config().client_name
+  defp client_name(config_key) do
+    ProducerConfig.client_name(config_key)
   end
 
-  defp global_partition_strategy do
-    config().partition_strategy
+  defp global_partition_strategy(config_key) do
+    ProducerConfig.partition_strategy(config_key)
   end
 
-  defp config do
-    Kaffe.Config.Producer.configuration()
+  defp config(config_key) do
+    ProducerConfig.configuration(config_key)
+  end
+
+  defp first_config_key do
+    ProducerConfig.list_config_keys() |> List.first()
   end
 end
