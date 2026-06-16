@@ -40,7 +40,9 @@ An opinionated, highly specific, Elixir wrapper around [Brod](https://github.com
       end
       ```
 
-  2. Configure a Kaffe Consumer and/or Producer
+  2. If using crc32cer version > 1.0, install cmake.
+
+  3. Configure a Kaffe Consumer and/or Producer
 
 ## Kaffe Consumer Usage
 
