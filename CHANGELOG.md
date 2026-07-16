@@ -2,6 +2,7 @@
 
 * Removes crc32cer version limit. Bumping to > 1.0.0 requires cmake, so some may want to limit crc32cer themselves in mix.exs.
 * Bumps brod and kafka_protocol
+* Fixes readme typo
 
 # 2.0.0
 

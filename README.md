@@ -36,7 +36,7 @@ An opinionated, highly specific, Elixir wrapper around [Brod](https://github.com
 
       ```elixir
       def deps do
-        [{:kaffe, "~> 1.0"}]
+        [{:kaffe, "~> 2.0"}]
       end
       ```
 
