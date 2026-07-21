@@ -2,7 +2,7 @@ defmodule Kaffe.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/spreedly/kaffe"
-  @version "2.1.0"
+  @version "2.2.0"
 
   def project do
     [
