@@ -48,7 +48,10 @@ defmodule Kaffe.Config.ConsumerTest do
         subscriber_retry_delay_ms: 5,
         offset_reset_policy: :reset_by_subscriber,
         worker_allocation_strategy: :worker_per_partition,
-        client_down_retry_expire: 15_000
+        client_down_retry_expire: 15_000,
+        prefetch_bytes: 102_400,
+        prefetch_count: 10,
+        sleep_timeout: 1000
       }
 
       on_exit(fn ->
@@ -91,7 +94,10 @@ defmodule Kaffe.Config.ConsumerTest do
         subscriber_retry_delay_ms: 5,
         offset_reset_policy: :reset_by_subscriber,
         worker_allocation_strategy: :worker_per_partition,
-        client_down_retry_expire: 15_000
+        client_down_retry_expire: 15_000,
+        prefetch_bytes: 102_400,
+        prefetch_count: 10,
+        sleep_timeout: 1000
       }
 
       on_exit(fn ->
@@ -136,7 +142,10 @@ defmodule Kaffe.Config.ConsumerTest do
       subscriber_retry_delay_ms: 5,
       offset_reset_policy: :reset_by_subscriber,
       worker_allocation_strategy: :worker_per_partition,
-      client_down_retry_expire: 15_000
+      client_down_retry_expire: 15_000,
+      prefetch_bytes: 102_400,
+      prefetch_count: 10,
+      sleep_timeout: 1000
     }
 
     on_exit(fn ->
@@ -180,7 +189,10 @@ defmodule Kaffe.Config.ConsumerTest do
       subscriber_retry_delay_ms: 5,
       offset_reset_policy: :reset_by_subscriber,
       worker_allocation_strategy: :worker_per_partition,
-      client_down_retry_expire: 15_000
+      client_down_retry_expire: 15_000,
+      prefetch_bytes: 102_400,
+      prefetch_count: 10,
+      sleep_timeout: 1000
     }
 
     on_exit(fn ->

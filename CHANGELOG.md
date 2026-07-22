@@ -1,3 +1,8 @@
+# 2.2.0
+
+* Adds more brod configuration options: `sleep_timeout`, `prefetch_bytes`, and `prefetch_count`. See `:brod_consumer` for more info
+about how these are used.
+
 # 2.1.0
 
 * Removes crc32cer version limit. Bumping to > 1.0.0 requires cmake, so some may want to limit crc32cer themselves in mix.exs.

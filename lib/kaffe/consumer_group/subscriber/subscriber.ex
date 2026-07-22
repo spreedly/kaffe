@@ -235,6 +235,9 @@ defmodule Kaffe.Subscriber do
 
   defp subscriber_ops(config) do
     [
+      sleep_timeout: config.sleep_timeout,
+      prefetch_count: config.prefetch_count,
+      prefetch_bytes: config.prefetch_bytes,
       max_bytes: config.max_bytes,
       min_bytes: config.min_bytes,
       max_wait_time: config.max_wait_time,
